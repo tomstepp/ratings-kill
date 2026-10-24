@@ -26,6 +26,10 @@ const ACHIEVEMENTS := {
 	"untouchable": {"title": "UNTOUCHABLE", "reward": 500},
 	"window_shopper": {"title": "WINDOW SHOPPER", "reward": 25},
 	"mascot": {"title": "MASCOT MAYHEM", "reward": 1000},
+	"manager": {"title": "UNDER NEW MANAGEMENT", "reward": 1500},
+	"director": {"title": "DIRECTOR'S CUT", "reward": 2000},
+	"finale": {"title": "SERIES FINALE", "reward": 5000},
+	"grade_s": {"title": "MUST-SEE TV", "reward": 750},
 }
 
 var unlocked := {}

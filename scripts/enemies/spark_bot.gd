@@ -47,7 +47,7 @@ func _behave(delta: float) -> void:
 	if _t <= CHARGE_TIME:
 		sprite.play("charge")
 	if _t <= 0.0:
-		_t = FIRE_EVERY
+		_t = FIRE_EVERY * (1.0 - 0.15 * GameState.difficulty())
 		sprite.play("idle")
 		var b := EnemyBolt.new()
 		b.direction = Vector2(signf(d.x), 0.0)

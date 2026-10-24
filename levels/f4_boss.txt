@@ -1,0 +1,23 @@
+name: The Season Finale
+floor: 4
+music: music_finale
+boss: finale
+intro: showrunner|Well, well. Rex Halloway. You made it all the way to the season finale.
+intro: showrunner|You know who's been writing your obstacles? ME. And I saved the best episode for last.
+intro: boom|It only takes damage when its screen opens. Jump between the grates to dodge the bolt walls and the laser. Then shoot the core!
+---
+################################
+#..............................#
+#..............................#
+#..............................#
+#..............................#
+#..............................#
+#..............................#
+#....--------...-------........#
+#..............................#
+#..............................#
+#.--------...----------........#
+#..............................#
+#..P....e.....h..............M.#
+================================
+================================

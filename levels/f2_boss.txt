@@ -1,0 +1,23 @@
+name: The Clearance Event
+floor: 2
+music: music_boss2
+boss: manager
+; Floor 2 finale. M is the boss, e is where the exit appears once he's beaten.
+intro: showrunner|Attention shoppers! Tonight only, a very special clearance event!
+intro: showrunner|Everything must go, starting with YOU. Please welcome... THE FLOOR MANAGER!
+intro: boom|He dashes, he shouts, he throws clipboards. Jump the shouting. Shoot the clipboards. Get on the grates when he charges.
+---
+##############################
+#............................#
+#............................#
+#............................#
+#.............f..............#
+#...........------...........#
+#............................#
+#............................#
+#...-----............-----...#
+#............................#
+#............................#
+#..hP.........e.........M....#
+==============================
+==============================

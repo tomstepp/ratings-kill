@@ -17,9 +17,11 @@ var font: FontFile
 
 func _ready() -> void:
 	for name in ["rex", "boom", "rat", "spark", "bolt", "enemy_bolt", "pickups", "keycards", "crate",
-			"tvblock", "doors", "switch", "sponsor_crate", "chute", "stage_light", "portraits", "ui", "lift", "mascot", "shockwave", "bomb"]:
+			"tvblock", "doors", "switch", "sponsor_crate", "chute", "stage_light", "portraits", "ui", "lift", "mascot", "shockwave", "bomb",
+			"guard", "mannequin", "micdrone", "execdrone", "clipboard", "manager", "director", "finale"]:
 		tex[name] = load("res://assets/sprites/%s.png" % name)
-	tex["subway"] = load("res://assets/tiles/subway.png")
+	for sheet in ["subway", "mall", "backlot", "hq"]:
+		tex[sheet] = load("res://assets/tiles/%s.png" % sheet)
 	font = _build_font()
 
 

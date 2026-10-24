@@ -4,16 +4,18 @@
 Approximates Rex's movement on the tile grid: he is 2 tiles tall, jumps up to
 3 tiles high and about 4 tiles across, falls any distance, drops through grates,
 opens doors once he holds the matching keycard, extends bridges via levers and
-rides lifts (L, up from where they're placed) and sliders (H, rightward).
+rides lifts (L, up from where they're placed), sliders (H, rightward) and
+camera cranes (K, a circle of radius 40px). Conveyor belts (< >) are floor.
 Usage: python3 tools/check_levels.py [levels/*.txt]
 """
 import glob
+import math
 import os
 import sys
 
 JUMP_UP = 3
 JUMP_ACROSS = 4
-SOLID = set("#=?*")
+SOLID = set("#=?*<>")
 DOORS = {"A": "a", "B": "b", "C": "c"}
 
 
@@ -40,21 +42,42 @@ def check(path):
     keys, bridges = set(), False
 
     def blocks(x, y):
-        return ch(x, y) in "#=?*xABCF-mL"
+        return ch(x, y) in "#=?*xABCF-mL<>"
+
+    def ledge_beside(x, row):
+        # Same rule as Level._ledge_beside: lifts stop level with the highest ledge next to them.
+        for cx in (x - 2, x - 1, x + 2, x + 3):
+            if ch(cx, row) in "#=-<>" and not blocks(cx, row - 1) and not blocks(cx, row - 2):
+                return True
+        return False
 
     # Moving platforms: every cell a platform passes through, grouped per platform.
     rides, groups = {}, []
     for y in range(h):
         for x in range(w):
             c = g[y][x]
-            if c not in "LH":
+            if c not in "LHK":
                 continue
             cells = []
-            if c == "L":
+            if c == "K":
+                # Platform top-center circles ((x+1)*16, y*16) at 40px; it's 32px wide.
+                for i in range(48):
+                    a = i / 48 * math.tau
+                    cx, cy = (x + 1) * 16 + 40 * math.cos(a), y * 16 + 40 * math.sin(a)
+                    row = int(cy // 16)
+                    for col in range(int((cx - 15) // 16), int((cx + 15) // 16) + 1):
+                        if (col, row) not in cells:
+                            cells.append((col, row))
+            elif c == "L":
                 r = y - 1
                 while r > 0 and not blocks(x, r) and not blocks(x + 1, r):
                     r -= 1
-                for row in range(min(y, r + 3), y + 1):
+                top = min(y, r + 3)
+                for row in range(top, y):
+                    if ledge_beside(x, row):
+                        top = row
+                        break
+                for row in range(top, y + 1):
                     cells += [(x, row), (x + 1, row)]
             else:
                 cx = x + 2
@@ -83,10 +106,11 @@ def check(path):
         """Something to stand on below cell (x, y)."""
         c = ch(x, y + 1)
         # Crates break, so they never count as a step.
-    return solid(x, y + 1) or c == "-" or (x, y + 1) in rides
+        return solid(x, y + 1) or c == "-" or (x, y + 1) in rides
 
     def open_cell(x, y):
-        return not solid(x, y) and ch(x, y) != "x"
+        # Crates can be shot out of the way, so they neither block nor hold Rex up.
+        return not solid(x, y)
 
     def standable(x, y):
         return open_cell(x, y) and open_cell(x, y - 1) and support(x, y)

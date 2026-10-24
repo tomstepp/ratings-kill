@@ -1,13 +1,13 @@
 class_name Screen
 extends Node2D
-## Shared bits for full-screen menus: a subway backdrop, scanlines, labels.
+## Shared bits for full-screen menus: a tiled backdrop, scanlines, labels.
 
 var _t := 0.0
 
 
-func backdrop(dim := 0.45) -> void:
+func backdrop(dim := 0.45, tiles := "subway") -> void:
 	var bg := TileMapLayer.new()
-	bg.tile_set = Level.tileset()
+	bg.tile_set = Level.tileset(tiles)
 	for y in 12:
 		for x in 20:
 			bg.set_cell(Vector2i(x, y), 0, Level.BG_BAND if y % 9 == 5 else Level.PILLAR if x % 13 == 6 else Level.BG)

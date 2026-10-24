@@ -76,11 +76,8 @@ func _ready() -> void:
 	_desc.size = Vector2(150, 24)
 	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 
-	var next_path: String = GameState.LEVELS[GameState.level_index + 1]
-	var probe := Level.new()
-	probe.load_layout(next_path)
-	_next_title = probe.title
-	probe.free()
+	var next := GameState.level_index + 1
+	_next_title = "%s: %s" % [GameState.level_label(next), Level.read_header(GameState.LEVELS[next]).get("name", "")]
 
 	_refresh()
 	scanlines()
@@ -140,7 +137,7 @@ func _choose(item: Dictionary) -> void:
 		Sfx.play("deny")
 		Showrunner.say("You've maxed that out. Even our generosity has limits. Mostly legal ones.", "showrunner", true)
 		return
-	if not GameState.spend(item.cost):
+	if not GameState.spend(_cost(item)):
 		Sfx.play("deny")
 		Showrunner.say("Insufficient funds! Have you considered being more entertaining?", "showrunner", true)
 		return
@@ -158,19 +155,27 @@ func _choose(item: Dictionary) -> void:
 	_refresh()
 
 
+## Prices rise floor by floor (the network knows you're earning more).
+func _cost(item: Dictionary) -> int:
+	var next_floor := GameState.floor_index(GameState.level_index + 1)
+	return int(item.cost * (1.0 + 0.5 * next_floor) / 50.0) * 50
+
+
 func _refresh() -> void:
 	_money.text = "$%d   HP %d/%d" % [GameState.points, GameState.health, GameState.MAX_HEALTH]
 	for i in ITEMS.size():
 		var item: Dictionary = ITEMS[i]
 		var label: String = ("> " if i == _cursor else "  ") + item.name
 		if item.id != "go":
-			label += " SOLD OUT" if _maxed(item.id) else " $%d" % item.cost
+			label += " SOLD OUT" if _maxed(item.id) else " $%d" % _cost(item)
 		_rows[i].text = label
 		var color := Art.c("white")
 		if i == _cursor:
 			color = Art.c("gold")
-		elif item.id != "go" and (_maxed(item.id) or GameState.points < item.cost):
+		elif item.id != "go" and (_maxed(item.id) or GameState.points < _cost(item)):
 			color = Art.c("metal")
 		_rows[i].add_theme_color_override("font_color", color)
 	var sel: Dictionary = ITEMS[_cursor]
 	_desc.text = "NEXT: " + _next_title.to_upper() if sel.id == "go" else sel.desc
+	if sel.id == "go" and GameState.is_boss(GameState.level_index + 1):
+		_desc.text += "  (BOSS!)"

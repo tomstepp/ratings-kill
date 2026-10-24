@@ -1,13 +1,10 @@
 class_name Mascot
-extends Enemy
+extends Boss
 ## Floor 1 boss: Mister Cheddar, the network's beloved foam rat mascot.
 ## Pattern: charge across the arena (dizzy after hitting a wall), jump at Rex
 ## and land with floor shockwaves, and below half health, lob confetti bombs
 ## and call in rat fans. Shoot him anywhere; stomp his head for big damage.
 
-signal defeated
-
-const MAX_HP := 60
 const GRAVITY := 900.0
 const WALK_SPEED := 40.0
 const CHARGE_SPEED := 165.0
@@ -21,11 +18,12 @@ var _t := 1.0
 var _next_moves: Array = []
 var _stomp_cd := 0.0
 var _throws_left := 0
-var _enraged := false
 
 
 func _build() -> void:
-	hp = MAX_HP
+	display_name = "MISTER CHEDDAR, THE MASCOT"
+	max_hp = 60
+	hp = max_hp
 	points = 5000
 	collision_mask = 1  # too heavy for grates
 	top_offset = 44.0
@@ -51,10 +49,6 @@ func _build() -> void:
 	add_child(sprite)
 
 
-func health_ratio() -> float:
-	return clampf(float(hp) / MAX_HP, 0.0, 1.0)
-
-
 func _behave(delta: float) -> void:
 	_stomp_cd -= delta
 	velocity.y = minf(velocity.y + GRAVITY * delta, 400.0)
@@ -68,9 +62,7 @@ func _behave(delta: float) -> void:
 			velocity.x = 0.0
 			sprite.play("idle")
 			_face_rex()
-			# Wait for the Showrunner's introduction to finish (capped).
-			if (_t <= 0.0 and not Showrunner.is_talking()) or _t < -12.0:
-				Sfx.play("roar")
+			if _intro_over(delta):
 				_set_mode(Mode.IDLE, 0.6)
 		Mode.IDLE:
 			velocity.x = 0.0
@@ -92,7 +84,7 @@ func _behave(delta: float) -> void:
 				Sfx.play("roar")
 				_set_mode(Mode.CHARGE, 4.0)
 		Mode.CHARGE:
-			velocity.x = facing * CHARGE_SPEED * (1.2 if _enraged else 1.0)
+			velocity.x = facing * CHARGE_SPEED * (1.2 if enraged else 1.0)
 			sprite.play("charge")
 			if is_on_wall() or _t <= 0.0:
 				GameState.level.shake(5.0)
@@ -144,13 +136,13 @@ func _face_rex() -> void:
 func _pick_move() -> void:
 	if _next_moves.is_empty():
 		_next_moves = ["charge", "jump", "jump", "walk"]
-		if _enraged:
+		if enraged:
 			_next_moves += ["throw", "throw", "charge"]
 		_next_moves.shuffle()
 	_face_rex()
 	match _next_moves.pop_back():
 		"charge":
-			_set_mode(Mode.WINDUP, 0.7 if not _enraged else 0.5)
+			_set_mode(Mode.WINDUP, 0.7 if not enraged else 0.5)
 		"jump":
 			_set_mode(Mode.CROUCH, 0.45)
 		"walk":
@@ -177,9 +169,9 @@ func _land() -> void:
 		w.direction = dir
 		w.global_position = global_position + Vector2(dir * 16, 0)
 		GameState.level.add_child(w)
-	if _enraged and randf() < 0.35:
+	if enraged and randf() < 0.35:
 		_call_fans()
-	_set_mode(Mode.IDLE, 0.7 if not _enraged else 0.45)
+	_set_mode(Mode.IDLE, 0.7 if not enraged else 0.45)
 
 
 func _throw_bomb() -> void:
@@ -226,50 +218,12 @@ func touch_rex(rex: Rex, prev_feet: float, falling: bool) -> void:
 		rex.hurt(contact_damage, global_position.x)
 
 
-func shot(damage: int, from: Node) -> void:
-	if dead or mode == Mode.INTRO:
-		return
-	hp -= damage
-	_flash = 0.06
-	Sfx.play_varied("hit", 0.1, -4.0)
-	if not _enraged and hp <= MAX_HP / 2:
-		_enraged = true
-		_next_moves.clear()
-		tint = Color(1.25, 0.85, 0.85)
-		Sfx.play("roar", 0.8)
-		Showrunner.say("Uh oh, Cheddar's getting cranky! Legal says that's YOUR problem.", "showrunner", true)
-	if hp <= 0:
-		_die()
-
-
-func stun(time: float) -> void:
-	# The costume's foam head absorbs most of the flash.
-	super(time * 0.35)
+func _on_enrage() -> void:
+	_next_moves.clear()
+	Showrunner.say("Uh oh, Cheddar's getting cranky! Legal says that's YOUR problem.", "showrunner", true)
 
 
 func _die() -> void:
-	dead = true
 	mode = Mode.DYING
-	remove_from_group("enemies")
-	set_deferred("collision_layer", 0)
 	sprite.play("hurt")
-	GameState.add_points(points)
-	GameState.stat("kills")
-	Ratings.add(40, "SEASON HIGHLIGHT")
-	Sfx.music("")
-	Showrunner.clear()
-	Showrunner.say("NOOO! Not Cheddar! Do you know what his plush toys cost us?!", "showrunner", true)
-	var level = GameState.level
-	var t := create_tween()
-	for i in 8:
-		t.tween_callback(func():
-			var p: Vector2 = global_position + Vector2(randf_range(-18, 18), randf_range(-40, -4))
-			level.burst(p, [Art.c("magenta"), Art.c("gold"), Art.c("white")].pick_random(), 14, 110.0)
-			level.shake(3.0)
-			Sfx.play_varied("explode", 0.2, -2.0))
-		t.tween_interval(0.22)
-	t.tween_property(sprite, "modulate:a", 0.0, 0.5)
-	t.tween_callback(func():
-		level.float_text(global_position + Vector2(0, -50), "$%d" % points, Art.c("gold"))
-		defeated.emit()
-		queue_free())
+	_finale("NOOO! Not Cheddar! Do you know what his plush toys cost us?!", 40.0)

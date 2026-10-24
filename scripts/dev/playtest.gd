@@ -11,7 +11,8 @@ var rex: Rex
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameState.save_path = "user://playtest_save.cfg"
-	get_tree().create_timer(300.0).timeout.connect(func():
+	GameState.skip_cards = true
+	get_tree().create_timer(480.0).timeout.connect(func():
 		print("PLAYTEST TIMED OUT")
 		get_tree().quit(2))
 	_run.call_deferred()
@@ -23,6 +24,7 @@ func _run() -> void:
 	await _world_checks()
 	await _show_checks()
 	await _phase4_checks()
+	await _season_checks()
 	print("PLAYTEST %s (%d failed)" % ["OK" if _fails == 0 else "FAILED", _fails])
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -350,7 +352,7 @@ func _show_checks() -> void:
 	Input.action_press("interact")
 	await frames(2)
 	Input.action_release("interact")
-	for i in 240:
+	for i in 330:
 		await frames(1)
 	var in_break := false
 	for n in GameState.main.get_children():
@@ -362,6 +364,7 @@ func _show_checks() -> void:
 # ------------------------------------------------------------------ phase 4
 
 func open_level(i: int) -> void:
+	release_all()
 	GameState.new_game()
 	await frames(2)
 	GameState.start_level(i)
@@ -371,12 +374,48 @@ func open_level(i: int) -> void:
 	Showrunner.clear()
 
 
+func find(kind) -> Node:
+	for n in level.get_children():
+		if is_instance_of(n, kind):
+			return n
+	return null
+
+
+func screen_is(kind) -> bool:
+	for n in GameState.main.get_children():
+		if is_instance_of(n, kind):
+			return true
+	return false
+
+
+func use_exit() -> void:
+	var exit: ExitDoor = find(ExitDoor)
+	rex.global_position = exit.global_position
+	await frames(4)
+	Input.action_press("interact")
+	await frames(2)
+	Input.action_release("interact")
+
+
+## Clear the boss intro, check it fights and takes damage, then finish it off.
+func boss_fight(i: int, title: String) -> Boss:
+	await open_level(i)
+	var boss: Boss = level.boss
+	check("%s spawns" % title, boss != null and boss.display_name != "")
+	await frames(30)
+	check("%s waits during intro" % title, boss.in_intro())
+	Showrunner.clear()
+	await frames(150)
+	check("%s starts fighting" % title, not boss.in_intro())
+	return boss
+
+
 func _phase4_checks() -> void:
-	# Lift in level 3 (index 2) carries Rex up.
-	await open_level(2)
+	# Lift in Maintenance Shaft (index 1) carries Rex up.
+	await open_level(1)
 	var lift: Mover
 	for n in level.get_children():
-		if n is Mover and n.from.x == n.to.x:
+		if n is Mover and n.from.x == n.to.x and n.orbit == 0.0:
 			lift = n
 	rex.global_position = lift.global_position + Vector2(0, -1)
 	rex.velocity = Vector2.ZERO
@@ -384,13 +423,15 @@ func _phase4_checks() -> void:
 	await frames(240)
 	check("lift carries Rex up", rex.global_position.y < y0 - 64.0, "(%.0f -> %.0f)" % [y0, rex.global_position.y])
 
-	# Slider in level 4 (index 3) carries Rex sideways over the rails.
-	await open_level(3)
+	# Slider in Fountain Plaza (index 4) carries Rex over the live wiring.
+	await open_level(4)
 	var slider: Mover
 	for n in level.get_children():
-		if n is Mover and n.from.y == n.to.y:
+		if n is Mover and n.from.y == n.to.y and n.orbit == 0.0:
 			slider = n
 			break
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
 	GameState.health = 8
 	rex.global_position = slider.global_position + Vector2(0, -1)
 	rex.velocity = Vector2.ZERO
@@ -410,50 +451,188 @@ func _phase4_checks() -> void:
 	rat.shot(1, null)
 	check("fast rat takes two hits", survived and rat.dead)
 
-	# Boss: intro holds, damage works, defeat opens the exit, exit ends the floor.
-	await open_level(GameState.LEVELS.size() - 1)
-	var boss: Mascot = level.boss
-	check("boss level spawns the Mascot", boss != null)
-	await frames(30)
-	check("boss waits during intro", boss.mode == Mascot.Mode.INTRO)
-	Showrunner.clear()
-	await frames(120)
-	check("boss starts fighting after intro", boss.mode != Mascot.Mode.INTRO)
+	# Mister Cheddar ends Floor 1: the floor card, then the break room; the run is saved.
+	var boss: Boss = await boss_fight(3, "the Mascot")
 	var hp0 := boss.hp
 	boss.shot(1, null)
 	check("boss takes damage", boss.hp == hp0 - 1)
 	boss.shot(boss.hp, null)
 	await frames(200)
-	var exit: ExitDoor
-	for n in level.get_children():
-		if n is ExitDoor:
-			exit = n
-	check("defeating the boss opens the exit", exit != null and Showrunner.unlocked.has("mascot"))
-	rex.global_position = exit.global_position
-	await frames(4)
-	Input.action_press("interact")
+	check("defeating the boss opens the exit", find(ExitDoor) != null and Showrunner.unlocked.has("mascot"))
+	await use_exit()
+	await frames(400)
+	check("boss exit shows the floor card", screen_is(EndCard))
+	check("finishing a floor saves the next one", GameState.saved_level() == 4)
+	Input.action_press("jump")
 	await frames(2)
-	Input.action_release("interact")
-	await frames(240)
-	var at_end := false
-	for n in GameState.main.get_children():
-		if n is EndCard:
-			at_end = true
-	check("boss exit ends the floor", at_end)
-	check("finishing the floor clears the save", not GameState.has_save())
+	Input.action_release("jump")
+	await frames(5)
+	check("floor card leads to the break room", screen_is(BreakRoom))
 
 	# Save and continue: finish level 1, then continue into the break room before level 2.
 	await open_level(0)
 	level.complete()
-	await frames(200)
+	await frames(300)
 	check("completing a level saves", GameState.saved_level() == 1)
 	var pts := GameState.points
 	GameState.points = 0
 	check("continue restores the run", GameState.continue_game() and GameState.points == pts)
 	await frames(5)
-	var in_break := false
-	for n in GameState.main.get_children():
-		if n is BreakRoom:
-			in_break = true
-	check("continue opens the break room", in_break and GameState.level_index == 0)
+	check("continue opens the break room", screen_is(BreakRoom) and GameState.level_index == 0)
 	GameState.clear_save()
+
+
+# ------------------------------------------------------------------ the season
+
+func _season_checks() -> void:
+	check("season has 16 episodes", GameState.LEVELS.size() == 16)
+	for i in GameState.LEVELS.size():
+		if not FileAccess.file_exists(GameState.LEVELS[i]):
+			check("level file exists: %s" % GameState.LEVELS[i], false)
+
+	# Title card before a level, then the level itself.
+	GameState.new_game()
+	await frames(2)
+	GameState.skip_cards = false
+	GameState.start_level(5)
+	await frames(3)
+	check("title card shows before a level", screen_is(LevelCard))
+	await frames(int(LevelCard.HOLD * 60) + 20)
+	check("title card hands off to the level", GameState.level != null and GameState.level.title == "Department Store")
+	GameState.skip_cards = true
+
+	# Ratings multiply cash; the end-of-level report pays a bonus.
+	await open_level(0)
+	Ratings.value = 80.0
+	var before := GameState.points
+	var paid := GameState.add_points(100, true)
+	check("ratings multiply cash (x4 at 80)", Ratings.multiplier() == 4 and paid == 400 and GameState.points == before + 400)
+	Ratings.value = 10.0
+	check("low ratings pay x1", Ratings.multiplier() == 1)
+	var r := Ratings.report()
+	check("ratings report grades the level", r.has("grade") and r.has("bonus"))
+
+	# Corner correction: clipping a ledge corner mid-jump nudges Rex past it.
+	var corner := Vector2i(-1, -1)
+	for y in range(2, level.height - 4):
+		for x in range(2, level.width - 2):
+			if corner.x < 0 and level.is_solid(Vector2i(x, y)) and level.is_empty(Vector2i(x + 1, y)) \
+					and level.is_empty(Vector2i(x, y + 1)) and level.is_empty(Vector2i(x, y + 2)) and level.is_empty(Vector2i(x, y + 3)) \
+					and level.is_empty(Vector2i(x + 1, y + 1)) and level.is_empty(Vector2i(x + 1, y + 2)):
+				corner = Vector2i(x, y)
+	var edge := (corner.x + 1) * 16.0
+	rex.global_position = Vector2(edge + 2.0, (corner.y + 1) * 16.0 + 27.0 + 3.0)
+	rex.velocity = Vector2(0, -280)
+	await frames(6)
+	check("head clipping a corner slides past it", rex.global_position.x >= edge + 5.0 and rex.global_position.y < (corner.y + 1) * 16.0 + 20.0,
+		"(corner %s, rex %s)" % [corner, rex.global_position])
+
+	# New enemies all die to blaster fire.
+	for kind in [SecurityBot, Mannequin, MicDrone, ExecDrone]:
+		var e: Enemy = kind.new()
+		e.position = Vector2(-2000, -2000)
+		level.add_child(e)
+		await frames(2)
+		for i in 6:
+			e.shot(1, null)
+		check("%s can be shot down" % e.get_script().get_global_name(), e.dead)
+
+	# Mannequins freeze while watched and rush you otherwise.
+	await open_level(5)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
+	await frames(2)
+	var spot := rex.global_position
+	var m := Mannequin.new()
+	m.position = spot + Vector2(50, 0)  # clear of the crate further along
+	level.add_child(m)
+	rex.facing = 1
+	await frames(40)
+	var still := absf(m.position.x - (spot.x + 50)) < 1.0
+	rex.facing = -1
+	await frames(40)
+	check("mannequin freezes while watched, moves when not", still and m.position.x < spot.x + 40.0,
+		"(still %s, now %.0f, rex facing %d)" % [still, m.position.x - spot.x, rex.facing])
+
+	# Belts carry Rex.
+	var belt := Vector2i(-1, -1)
+	for y in level.height:
+		for x in level.width:
+			if belt.x < 0 and level.cell(x, y) == ">" and level.cell(x, y - 1) == "." and level.cell(x + 1, y) == ">":
+				belt = Vector2i(x, y)
+	m.queue_free()
+	rex.global_position = Vector2(belt.x * 16 + 8, belt.y * 16)
+	rex.velocity = Vector2.ZERO
+	var bx := rex.global_position.x
+	await frames(30)
+	check("conveyor belts carry Rex", rex.global_position.x > bx + 10.0, "(%.0f -> %.0f)" % [bx, rex.global_position.x])
+
+	# A crane platform carries Rex around (Soundstage 9, index 8).
+	await open_level(8)
+	var crane: Mover
+	for n in level.get_children():
+		if n is Mover and n.orbit > 0.0:
+			crane = n
+	await frames(2)
+	GameState.health = 8
+	rex.global_position = crane.global_position + Vector2(0, -1)
+	rex.velocity = Vector2.ZERO
+	var c0 := rex.global_position
+	await frames(50)
+	check("crane carries Rex", rex.global_position.distance_to(c0) > 20.0 and rex.is_on_floor(), "(%s -> %s)" % [c0, rex.global_position])
+
+	# Spotlight cues drop a stage light.
+	var cue: TriggerZone
+	for n in level.get_children():
+		if n is TriggerZone and n.kind == "spotlight":
+			cue = n
+			break
+	rex.global_position = cue.global_position + Vector2(0, 8)
+	await frames(10)
+	check("spotlight cue drops a light", find(StageLight) != null)
+
+	# Empty ratings on Floor 3+ cancel the episode.
+	await open_level(8)
+	var canceled := [false]
+	Ratings.canceled.connect(func(): canceled[0] = true, CONNECT_ONE_SHOT)
+	Ratings.value = 0.0
+	await frames(60 * 7)
+	check("an empty meter cancels the episode on floor 3", canceled[0])
+	await frames(200)
+
+	# Laser gates hurt while live (Lobby and Security, index 12).
+	await open_level(12)
+	var gate: LaserGate = find(LaserGate)
+	GameState.health = 8
+	rex.global_position = Vector2(gate.global_position.x, rex.global_position.y)
+	await frames(240)
+	check("laser gates hurt", GameState.health < 8)
+
+	# The three new bosses.
+	for pair in [[7, "the Floor Manager", "manager"], [11, "the Director", "director"]]:
+		var b: Boss = await boss_fight(pair[0], pair[1])
+		var h0 := b.hp
+		b.shot(1, null)
+		check("%s takes damage" % pair[1], b.hp == h0 - 1)
+		b.shot(b.hp / 2, null)
+		await frames(5)
+		check("%s enrages below half" % pair[1], b.enraged)
+		b.shot(b.hp, null)
+		await frames(200)
+		check("beating %s opens the exit" % pair[1], find(ExitDoor) != null and Showrunner.unlocked.has(pair[2]))
+
+	var fin: Finale = await boss_fight(15, "the Season Finale")
+	var f0 := fin.hp
+	fin.mode = Finale.Mode.IDLE
+	fin.shot(1, null)
+	check("the Finale shrugs off shots while closed", fin.hp == f0)
+	fin.mode = Finale.Mode.OPEN
+	fin._t = 5.0
+	fin.shot(1, null)
+	check("the Finale takes damage while open", fin.hp == f0 - 1)
+	fin.shot(fin.hp, null)
+	await frames(200)
+	check("beating the Finale opens the exit", find(ExitDoor) != null and Showrunner.unlocked.has("finale"))
+	await use_exit()
+	await frames(300)
+	check("the last boss ends the season", screen_is(EndCard) and not GameState.has_save())

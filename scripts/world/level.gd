@@ -5,7 +5,7 @@ extends Node2D
 
 const T := 16
 const SOLID_CHARS := "#="
-# Atlas coords in assets/tiles/subway.png
+# Atlas coords in assets/tiles/<floor>.png (every floor's sheet has the same layout)
 const BRICK := Vector2i(0, 0)
 const FLOOR_TOP := Vector2i(1, 0)
 const FILL := Vector2i(2, 0)
@@ -17,13 +17,17 @@ const BG_BAND := Vector2i(7, 0)
 const PILLAR := Vector2i(8, 0)
 const POSTER := Vector2i(9, 0)
 const RAIL_OFF := Vector2i(10, 0)
-const SOLID_TILES := [BRICK, FLOOR_TOP, FILL, BRIDGE]
+const BELT_LEFT := Vector2i(12, 0)
+const BELT_RIGHT := Vector2i(13, 0)
+const SOLID_TILES := [BRICK, FLOOR_TOP, FILL, BRIDGE, BELT_LEFT, BELT_RIGHT]
+const BELT_SPEED := 55.0
+const ATLAS_TILES := 14
 
-static var _tileset: TileSet
+static var _tilesets := {}
 
 var title := ""
 var rex: Rex
-var boss: Mascot
+var boss: Boss
 var boom: Boom
 var hud: Hud
 var camera: Camera2D
@@ -74,6 +78,24 @@ func load_layout(path: String) -> void:
 	kill_y = height * T + 24.0
 
 
+## Just the header of a level file (name, floor, music...), without building it.
+static func read_header(path: String) -> Dictionary:
+	var out := {}
+	for raw in FileAccess.get_file_as_string(path).split("\n"):
+		var line := raw.strip_edges()
+		if line == "---":
+			break
+		if line.contains(":") and not line.begins_with(";"):
+			out[line.get_slice(":", 0).strip_edges()] = line.substr(line.find(":") + 1).strip_edges()
+	return out
+
+
+## Which tile sheet this level uses, from its `floor:` header.
+func tiles_name() -> String:
+	var f := clampi(int(_meta.get("floor", "1")) - 1, 0, GameState.FLOORS.size() - 1)
+	return GameState.FLOORS[f].tiles
+
+
 func _ready() -> void:
 	GameState.level = self
 	_bg = _make_layer(-10, false)
@@ -102,6 +124,7 @@ func _ready() -> void:
 	Ratings.start_level()
 	Ratings.sponsor_drop.connect(_on_sponsor_drop)
 	Ratings.boredom.connect(_on_boredom)
+	Ratings.canceled.connect(_on_canceled)
 	Sfx.music(_meta.get("music", "music_level"))
 	Showrunner.clear()
 	for line in _intro:
@@ -131,9 +154,9 @@ func _process(delta: float) -> void:
 
 # ------------------------------------------------------------------ building
 
-static func tileset() -> TileSet:
-	if _tileset:
-		return _tileset
+static func tileset(sheet := "subway") -> TileSet:
+	if _tilesets.has(sheet):
+		return _tilesets[sheet]
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(T, T)
 	ts.add_physics_layer()
@@ -143,16 +166,19 @@ static func tileset() -> TileSet:
 	ts.set_physics_layer_collision_layer(1, 16)
 	ts.set_physics_layer_collision_mask(1, 0)
 	var src := TileSetAtlasSource.new()
-	src.texture = Art.tex["subway"]
+	src.texture = Art.tex[sheet]
 	src.texture_region_size = Vector2i(T, T)
 	ts.add_source(src, 0)
-	for i in 12:
+	for i in ATLAS_TILES:
 		src.create_tile(Vector2i(i, 0))
 	var full := PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)])
-	for coords in [BRICK, FLOOR_TOP, FILL]:
+	for coords in [BRICK, FLOOR_TOP, FILL, BELT_LEFT, BELT_RIGHT]:
 		var td := src.get_tile_data(coords, 0)
 		td.add_collision_polygon(0)
 		td.set_collision_polygon_points(0, 0, full)
+	# Conveyor belts (escalator treads) carry whatever stands on them.
+	src.get_tile_data(BELT_LEFT, 0).set_constant_linear_velocity(0, Vector2(-BELT_SPEED, 0))
+	src.get_tile_data(BELT_RIGHT, 0).set_constant_linear_velocity(0, Vector2(BELT_SPEED, 0))
 	var bridge := src.get_tile_data(BRIDGE, 0)
 	bridge.add_collision_polygon(0)
 	bridge.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, -1), Vector2(-8, -1)]))
@@ -160,13 +186,13 @@ static func tileset() -> TileSet:
 	grate.add_collision_polygon(1)
 	grate.set_collision_polygon_points(1, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, -4), Vector2(-8, -4)]))
 	grate.set_collision_polygon_one_way(1, 0, true)
-	_tileset = ts
+	_tilesets[sheet] = ts
 	return ts
 
 
 func _make_layer(z: int, collide: bool) -> TileMapLayer:
 	var l := TileMapLayer.new()
-	l.tile_set = tileset()
+	l.tile_set = tileset(tiles_name())
 	l.z_index = z
 	l.collision_enabled = collide
 	add_child(l)
@@ -194,6 +220,10 @@ func _build_tiles() -> void:
 					_terrain.set_cell(c, 0, FILL if SOLID_CHARS.contains(cell(x, y - 1)) else FLOOR_TOP)
 				"-":
 					_terrain.set_cell(c, 0, GRATE)
+				"<":
+					_terrain.set_cell(c, 0, BELT_LEFT)
+				">":
+					_terrain.set_cell(c, 0, BELT_RIGHT)
 				"F":
 					_fg.set_cell(c, 0, FAKE_BRICK)
 				"m":
@@ -210,6 +240,17 @@ func _build_tiles() -> void:
 				rail.setup(run.duplicate(), _deco)
 				add_child(rail)
 				run.clear()
+	# Laser gates: group vertical runs of '|'.
+	for x in width:
+		var beam: Array[Vector2i] = []
+		for y in height + 1:
+			if y < height and cell(x, y) == "|":
+				beam.append(Vector2i(x, y))
+			elif not beam.is_empty():
+				var gate := LaserGate.new()
+				gate.setup(beam.duplicate())
+				add_child(gate)
+				beam.clear()
 
 
 func _bg_tile(x: int, y: int) -> Vector2i:
@@ -242,6 +283,23 @@ func _spawn_entities() -> void:
 					_add_mover(x, y, ch == "L")
 				"S":
 					_add(SparkBot.new(), feet)
+				"G":
+					_add(SecurityBot.new(), feet)
+				"Q":
+					_add(Mannequin.new(), feet)
+				"D":
+					_add(MicDrone.new(), center)
+				"N":
+					_add(ExecDrone.new(), center)
+				"K":
+					var crane := Mover.new()
+					crane.orbit = 40.0
+					crane.from = Vector2(x * T + T, y * T)
+					add_child(crane)
+				"V":
+					var spot := TriggerZone.new()
+					spot.kind = "spotlight"
+					_add(spot, center)
 				"a", "b", "c":
 					spawn_pickup({"a": "key_red", "b": "key_blue", "c": "key_yellow"}[ch], center)
 				"h":
@@ -267,7 +325,15 @@ func _spawn_entities() -> void:
 				"e":
 					_boss_exit = feet
 				"M":
-					boss = Mascot.new()
+					match _meta.get("boss", "mascot"):
+						"manager":
+							boss = FloorManager.new()
+						"director":
+							boss = Director.new()
+						"finale":
+							boss = Finale.new()
+						_:
+							boss = Mascot.new()
 					boss.defeated.connect(_on_boss_defeated)
 					_add(boss, feet)
 				"w":
@@ -290,7 +356,8 @@ func _spawn_entities() -> void:
 	rex.boom = boom
 
 
-## Lifts ('L') ride up from where they're placed until just below the ceiling;
+## Lifts ('L') ride up from where they're placed until just below the ceiling,
+## or stop level with the highest ledge beside them so Rex can step straight off;
 ## sliders ('H') ride right until they meet a wall. Both are two tiles wide.
 func _add_mover(x: int, y: int, vertical: bool) -> void:
 	var m := Mover.new()
@@ -300,13 +367,26 @@ func _add_mover(x: int, y: int, vertical: bool) -> void:
 		var r := y - 1
 		while r > 0 and _open(x, r) and _open(x + 1, r):
 			r -= 1
-		m.to.y = minf(m.from.y, (r + 3) * T)
+		var top := mini(y, r + 3)
+		for row in range(top, y):
+			if _ledge_beside(x, row):
+				top = row
+				break
+		m.to.y = minf(m.from.y, top * T)
 	else:
 		var c := x + 2
 		while c < width and _open(c, y) and _open(c, y - 1) and _open(c, y - 2):
 			c += 1
 		m.to.x = maxf(m.from.x, (c - 2) * T + T)
 	add_child(m)
+
+
+## A walkable surface whose top is row `row`, within two tiles of a lift at columns x..x+1.
+func _ledge_beside(x: int, row: int) -> bool:
+	for cx in [x - 2, x - 1, x + 2, x + 3]:
+		if "#=-<>".contains(cell(cx, row)) and _open(cx, row - 1) and _open(cx, row - 2):
+			return true
+	return false
 
 
 func _open(x: int, y: int) -> bool:
@@ -472,18 +552,26 @@ func _on_boredom() -> void:
 			"Let's add some drama. Heads up! Or rather, heads DOWN."].pick_random(), "showrunner", true)
 		var i := 0
 		for dx in [-28.0, 0.0, 28.0]:
-			var p := rex.global_position + Vector2(dx + rex.velocity.x * 0.4, -20)
-			if not is_empty(_cell_at(p)):
-				continue
-			var light := StageLight.new()
-			light.position = ceiling_above(p, 7)
-			light.floor_y = floor_below(p)
-			get_tree().create_timer(i * 0.35).timeout.connect(add_child.bind(light))
-			i += 1
+			if drop_light(rex.global_position + Vector2(dx + rex.velocity.x * 0.4, -20), i * 0.35):
+				i += 1
+
+
+## Drop a stage light (after a blinking warning) above `p`. False if `p` is inside a wall.
+func drop_light(p: Vector2, delay := 0.0) -> bool:
+	if not is_empty(_cell_at(p)):
+		return false
+	var light := StageLight.new()
+	light.position = ceiling_above(p, 7)
+	light.floor_y = floor_below(p)
+	if delay > 0.0:
+		get_tree().create_timer(delay).timeout.connect(add_child.bind(light))
+	else:
+		add_child.call_deferred(light)
+	return true
 
 
 func _on_boss_defeated() -> void:
-	Showrunner.unlock("mascot")
+	Showrunner.unlock(_meta.get("boss", "mascot"))
 	Sfx.play("cheer")
 	var door := ExitDoor.new()
 	door.position = _boss_exit
@@ -491,7 +579,27 @@ func _on_boss_defeated() -> void:
 	add_child(door)
 	create_tween().tween_property(door, "modulate:a", 1.0, 0.8)
 	burst(_boss_exit + Vector2(0, -16), Art.c("lime"), 20, 90.0)
-	Showrunner.say("...Fine. FINE. The exit is open. Floor one is yours, Halloway.", "showrunner")
+	Showrunner.say(boss_defeat_line(), "showrunner")
+
+
+func boss_defeat_line() -> String:
+	match _meta.get("boss", "mascot"):
+		"manager":
+			return "Management has been... restructured. The exit's open. Floor two is yours."
+		"director":
+			return "That's a wrap on the Director. Literally. Floor three is yours, Halloway."
+		"finale":
+			return "No... no, this isn't how the season ends! ...Roll credits. Fine. FINE."
+	return "...Fine. FINE. The exit is open. Floor one is yours, Halloway."
+
+
+## The meter sat empty too long on a later floor: the network pulls the plug.
+func _on_canceled() -> void:
+	if _complete or not is_instance_valid(rex) or rex.state == Rex.State.DEAD:
+		return
+	Showrunner.clear()
+	Showrunner.say("We've lost the audience. This episode is CANCELED. Reshoot!", "showrunner", true)
+	rex.die(false)
 
 
 func _on_rex_died() -> void:
@@ -510,9 +618,14 @@ func complete() -> void:
 	Sfx.play("powerup")
 	if GameState.damage_this_level == 0:
 		Showrunner.unlock("untouchable")
+	var report := Ratings.report()
+	GameState.add_points(report.bonus)
+	if report.grade == "S":
+		Showrunner.unlock("grade_s")
+	hud.show_report(report)
 	Showrunner.clear()
-	Showrunner.say("That's a wrap on %s! Back to the break room, superstar." % title)
+	Showrunner.say("That's a wrap on %s! %s" % [title, Ratings.GRADE_LINES[report.grade]])
 	var t := create_tween()
 	t.tween_property(rex.sprite, "modulate:a", 0.0, 0.6)
-	t.tween_interval(2.0)
+	t.tween_interval(3.6)
 	t.tween_callback(GameState.level_complete)

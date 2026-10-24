@@ -237,7 +237,7 @@ def compose(name, bpm, key, scale, sections, lead_duty=0.25, seed=1):
 
 
 def gen_music():
-    # Level 1, Platform Zero: driving A minor, ~60s before it repeats.
+    # Floor 1 (Platform Zero, The Depot): driving A minor, ~60s before it repeats.
     i, iv, v, VI, VII = 0, 3, 4, 5, 6
     compose("music_level", 140, 57, MINOR, [
         {"bars": 4, "chords": [i, i, VI, VII], "drums": "half", "bass": "pulse", "arp": True},
@@ -248,7 +248,7 @@ def gen_music():
         {"bars": 4, "chords": [VI, VII, i, i], "drums": "full", "bass": "pulse", "lead": "b"},
     ], seed=3)
 
-    # Level 2, Rush Hour Ruins: faster D minor with a different hook.
+    # Floor 1 alternate (Maintenance Shaft): faster D minor with a different hook.
     compose("music_level2", 152, 50, MINOR, [
         {"bars": 4, "chords": [i, VII, VI, VII], "drums": "full", "bass": "pulse"},
         {"bars": 8, "chords": [i, VII, VI, VII], "drums": "full", "bass": "pulse", "lead": "a", "arp": True},
@@ -272,6 +272,50 @@ def gen_music():
         {"bars": 8, "chords": [VI, VII, i, i], "drums": "full", "bass": "walk", "lead": "b"},
         {"bars": 8, "chords": [i, VI, iv, v], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
     ], lead_duty=0.25, seed=21)
+
+    # Floor 2, the mall: a bouncy major-key groove with a walking bass.
+    compose("music_mall", 124, 55, MAJOR, [
+        {"bars": 4, "chords": [I, vi, IV, V], "drums": "half", "bass": "walk", "arp": True},
+        {"bars": 8, "chords": [I, vi, IV, V], "drums": "full", "bass": "walk", "lead": "a"},
+        {"bars": 8, "chords": [ii, V, I, vi], "drums": "full", "bass": "pulse", "lead": "b", "arp": True},
+        {"bars": 4, "chords": [IV, IV, V, V], "drums": "half", "bass": "walk", "arp": True},
+        {"bars": 8, "chords": [I, vi, IV, V], "drums": "full", "bass": "walk", "lead": "a_high"},
+    ], lead_duty=0.5, seed=14)
+
+    # Floor 3, the backlot: a galloping E minor, half cowboy, half action movie.
+    compose("music_backlot", 136, 52, MINOR, [
+        {"bars": 4, "chords": [i, i, VII, VII], "drums": "full", "bass": "pulse"},
+        {"bars": 8, "chords": [i, VII, VI, v], "drums": "full", "bass": "pulse", "lead": "a", "arp": True},
+        {"bars": 8, "chords": [VI, VII, i, i], "drums": "full", "bass": "walk", "lead": "b"},
+        {"bars": 4, "chords": [iv, iv, v, v], "drums": "half", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, VII, VI, v], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+    ], lead_duty=0.25, seed=17)
+
+    # Floor 4, Network HQ: cold, thin and quick in C minor.
+    compose("music_hq", 146, 48, MINOR, [
+        {"bars": 4, "chords": [i, i, iv, iv], "drums": "half", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, iv, VI, v], "drums": "full", "bass": "pulse", "lead": "a", "arp": True},
+        {"bars": 8, "chords": [VI, iv, i, v], "drums": "full", "bass": "walk", "lead": "b"},
+        {"bars": 4, "chords": [i, VII, VI, v], "drums": "full", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, iv, VI, v], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+    ], lead_duty=0.125, seed=27)
+
+    # Bosses on floors 2 and 3.
+    compose("music_boss2", 164, 55, MINOR, [
+        {"bars": 4, "chords": [i, VII, VI, v], "drums": "full", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, VII, VI, v], "drums": "full", "bass": "pulse", "lead": "a"},
+        {"bars": 8, "chords": [iv, v, i, i], "drums": "full", "bass": "walk", "lead": "b", "arp": True},
+        {"bars": 8, "chords": [i, VII, VI, v], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+    ], lead_duty=0.5, seed=29)
+
+    # The Season Finale: the fastest thing on the tape.
+    compose("music_finale", 176, 47, MINOR, [
+        {"bars": 4, "chords": [i, i, VI, VII], "drums": "full", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, VI, VII, v], "drums": "full", "bass": "pulse", "lead": "a", "arp": True},
+        {"bars": 8, "chords": [iv, VI, v, v], "drums": "full", "bass": "walk", "lead": "b"},
+        {"bars": 8, "chords": [i, VI, VII, v], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+        {"bars": 4, "chords": [VI, VII, i, i], "drums": "full", "bass": "pulse", "lead": "b"},
+    ], lead_duty=0.25, seed=33)
 
     # Title: big fanfare loop.
     compose("music_title", 120, 57, MINOR, [

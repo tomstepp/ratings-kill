@@ -15,6 +15,7 @@ func _build() -> void:
 	points = 150 if fast else 100
 	if fast:
 		speed = 64.0
+	speed *= 1.0 + 0.12 * GameState.difficulty()
 	top_offset = 9.0
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()

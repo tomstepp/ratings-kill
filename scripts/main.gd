@@ -26,14 +26,18 @@ func _ready() -> void:
 			_swap(BreakRoom.new())
 			return
 		if arg == "--screen=end":
-			_swap(EndCard.new())
+			show_end()
+			return
+		if arg.begins_with("--card="):
+			GameState.new_game()
+			show_card(int(arg.get_slice("=", 1)))
 			return
 	show_title()
 
 
 func _exit_tree() -> void:
 	# Release the shared tileset so Godot doesn't report it as leaked at quit.
-	Level._tileset = null
+	Level._tilesets.clear()
 
 
 func _swap(node: Node) -> void:
@@ -56,9 +60,20 @@ func show_level(path: String) -> void:
 	_swap(level)
 
 
+func show_card(i: int) -> void:
+	Ratings.stop()
+	Showrunner.clear()
+	var card := LevelCard.new()
+	card.index = i
+	_swap(card)
+
+
 func show_break_room() -> void:
 	_swap(BreakRoom.new())
 
 
-func show_end() -> void:
-	_swap(EndCard.new())
+## The end of a floor, or with `final` the end of the season.
+func show_end(final := true) -> void:
+	var card := EndCard.new()
+	card.final = final
+	_swap(card)

@@ -23,6 +23,7 @@ const JUMP_BUFFER := 0.12
 const SHOT_COOLDOWN := 0.2
 const INVULN := 1.3
 const PLATFORM_LAYER := 16  # one-way grates (physics layer 5)
+const CORNER_NUDGE := 7  # px Rex slides sideways to clear a ceiling corner mid-jump
 
 const QUIPS := {
 	"kill": ["Cut to commercial!", "That's a wrap.", "Cancelled.", "You've been renewed... NOT.", "Ratings, baby!",
@@ -156,6 +157,8 @@ func _physics_process(delta: float) -> void:
 	var rising := velocity.y < 0.0
 	var falling := velocity.y > 0.0
 	var prev_feet := global_position.y
+	if rising:
+		_corner_correct(delta, dir)
 	move_and_slide()
 	_check_bonks(rising)
 	_check_enemy_contacts(prev_feet, falling)
@@ -209,6 +212,24 @@ func _jump() -> void:
 	_coyote = 0.0
 	Sfx.play_varied("jump", 0.05, -4.0)
 	GameState.stat("jumps")
+
+
+## Clipping a ledge's corner with his head shouldn't kill a jump: if a small
+## sideways shift clears the ceiling, take it (toward where he's heading first).
+func _corner_correct(delta: float, dir: float) -> void:
+	var up := Vector2(0, velocity.y * delta - 1.0)
+	if not test_move(global_transform, up):
+		return
+	var first := signf(velocity.x) if absf(velocity.x) > 10.0 else dir
+	var sides := [first, -first] if first != 0.0 else [1.0, -1.0]
+	for side in sides:
+		for off in range(1, CORNER_NUDGE + 1):
+			var shift := Vector2(side * off, 0)
+			if test_move(global_transform, shift):
+				break
+			if not test_move(global_transform.translated(shift), up):
+				global_position += shift
+				return
 
 
 func _check_bonks(was_rising: bool) -> void:
@@ -288,7 +309,7 @@ func hurt(amount: int, from_x: float) -> void:
 		quip("near_death", true)
 
 
-func die() -> void:
+func die(announce := true) -> void:
 	if state == State.DEAD:
 		return
 	state = State.DEAD
@@ -302,10 +323,11 @@ func die() -> void:
 	Sfx.music("")
 	Sfx.play("death")
 	Ratings.stop()
-	var lines := ["And that's our show! ...Kidding. Reset the set!",
-		"Contestant down! Sponsors, please hold.",
-		"Ooh, the focus groups LOVED that."]
-	Showrunner.say(lines.pick_random(), "showrunner", true)
+	if announce:
+		var lines := ["And that's our show! ...Kidding. Reset the set!",
+			"Contestant down! Sponsors, please hold.",
+			"Ooh, the focus groups LOVED that."]
+		Showrunner.say(lines.pick_random(), "showrunner", true)
 	get_tree().create_timer(2.4).timeout.connect(func(): died.emit())
 
 

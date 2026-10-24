@@ -8,15 +8,16 @@ signal firepower_changed
 
 const MAX_HEALTH := 8
 const MAX_FIREPOWER := 4
-const LEVELS := [
-	"res://levels/f1_l1.txt",
-	"res://levels/f1_l2.txt",
-	"res://levels/f1_l3.txt",
-	"res://levels/f1_l4.txt",
-	"res://levels/f1_l5.txt",
-	"res://levels/f1_l6.txt",
-	"res://levels/f1_boss.txt",
+const LEVELS_PER_FLOOR := 4  # three levels, then the floor's boss
+## The season: four floors, each three levels and a boss. Files live in levels/.
+const FLOORS := [
+	{"name": "THE ABANDONED SUBWAY", "tiles": "subway", "levels": ["f1_l1", "f1_l2", "f1_l3", "f1_boss"]},
+	{"name": "THE MALL AFTER HOURS", "tiles": "mall", "levels": ["f2_l1", "f2_l2", "f2_l3", "f2_boss"]},
+	{"name": "THE STUDIO BACKLOT", "tiles": "backlot", "levels": ["f3_l1", "f3_l2", "f3_l3", "f3_boss"]},
+	{"name": "NETWORK HQ", "tiles": "hq", "levels": ["f4_l1", "f4_l2", "f4_l3", "f4_boss"]},
 ]
+
+var LEVELS: Array[String] = []  # every level path in play order, built from FLOORS
 
 var main: Node  # scenes/main.gd registers itself here
 var level: Node  # the running Level, if any
@@ -33,7 +34,15 @@ var damage_this_level := 0
 var music_on := true
 var narration_on := true
 
+var skip_cards := false  # the automated playtest goes straight into levels
+
 var _snapshot := {}
+
+
+func _init() -> void:
+	for f in FLOORS:
+		for name in f.levels:
+			LEVELS.append("res://levels/%s.txt" % name)
 
 
 func _ready() -> void:
@@ -92,12 +101,16 @@ func new_game() -> void:
 	start_level(0)
 
 
-func start_level(i: int) -> void:
+## Starts level `i`, after its title card unless this is a restart.
+func start_level(i: int, card := true) -> void:
 	level_index = i
 	keys = {}
 	damage_this_level = 0
 	_snapshot = {"points": points, "score": score, "firepower": firepower}
-	main.show_level(LEVELS[i])
+	if card and not skip_cards:
+		main.show_card(i)
+	else:
+		main.show_level(LEVELS[i])
 
 
 func restart_level() -> void:
@@ -105,16 +118,40 @@ func restart_level() -> void:
 	points = _snapshot.points
 	score = _snapshot.score
 	firepower = _snapshot.firepower
-	start_level(level_index)
+	start_level(level_index, false)
 
 
 func level_complete() -> void:
-	if level_index + 1 < LEVELS.size():
+	if level_index + 1 >= LEVELS.size():
+		clear_save()
+		main.show_end(true)
+	elif is_boss(level_index):
+		save_progress()
+		main.show_end(false)
+	else:
 		save_progress()
 		main.show_break_room()
-	else:
-		clear_save()
-		main.show_end()
+
+
+# ------------------------------------------------------------------ where we are
+
+func floor_index(i := level_index) -> int:
+	return i / LEVELS_PER_FLOOR
+
+
+## 0 on Floor 1 up to 3 on Floor 4. Enemies, prices and the meter scale with it.
+func difficulty() -> int:
+	return floor_index()
+
+
+func is_boss(i := level_index) -> bool:
+	return i % LEVELS_PER_FLOOR == LEVELS_PER_FLOOR - 1
+
+
+## "FLOOR 2 · LEVEL 3" style label for level `i`.
+func level_label(i := level_index) -> String:
+	var where := "BOSS" if is_boss(i) else "LEVEL %d" % (i % LEVELS_PER_FLOOR + 1)
+	return "FLOOR %d - %s" % [floor_index(i) + 1, where]
 
 
 func next_level() -> void:
@@ -134,10 +171,14 @@ func damage(amount: int) -> void:
 	health_changed.emit()
 
 
-func add_points(amount: int) -> void:
+## Money earned on air is multiplied by the ratings (x1 to x4). Returns what was paid.
+func add_points(amount: int, on_air := false) -> int:
+	if on_air:
+		amount *= Ratings.multiplier()
 	points += amount
 	score += amount
 	points_changed.emit()
+	return amount
 
 
 func spend(amount: int) -> bool:

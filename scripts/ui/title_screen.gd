@@ -35,10 +35,8 @@ func _ready() -> void:
 	centered("LIVE FROM THE TOWER BELOW", 102, Art.c("cyan"))
 	var saved := GameState.saved_level()
 	if saved > 0:
-		var probe := Level.new()
-		probe.load_layout(GameState.LEVELS[saved])
-		_options.append(centered("CONTINUE: %s" % probe.title.to_upper(), 116, Art.c("gold")))
-		probe.free()
+		var name: String = Level.read_header(GameState.LEVELS[saved]).get("name", "")
+		_options.append(centered("CONTINUE: %s %s" % [GameState.level_label(saved).replace("FLOOR ", "F").replace(" - LEVEL ", "-L").replace(" - BOSS", " BOSS"), name.to_upper()], 116, Art.c("gold")))
 		_options.append(centered("NEW GAME", 127, Art.c("steel")))
 		_refresh()
 	else:

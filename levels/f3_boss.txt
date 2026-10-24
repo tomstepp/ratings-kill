@@ -1,0 +1,24 @@
+name: The Director's Cut
+floor: 3
+music: music_boss2
+boss: director
+intro: showrunner|Quiet on set! Our next guest has directed four hundred episodes and liked none of them.
+intro: showrunner|Please welcome... THE DIRECTOR!
+intro: boom|He rides the crane up high. Shoot him from the top grates, dodge the lights, and when he swoops in for a close-up: let him have it.
+---
+##############################
+#............................#
+#............................#
+#............................#
+#............................#
+#............................#
+#.-----................-----.#
+#............................#
+#.........----..----.........#
+#............................#
+#............................#
+#..-----..............-----..#
+#............................#
+#..P...e.........M...........h
+==============================
+==============================

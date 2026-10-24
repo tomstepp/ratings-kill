@@ -90,9 +90,8 @@ func _on_body(body: Node) -> void:
 			color = Art.c("lime")
 			Ratings.add(5, "UPGRADE")
 		"token":
-			GameState.add_points(50)
+			text = Enemy._cash_text(GameState.add_points(50, true))
 			Sfx.play_varied("pickup", 0.05, -4.0)
-			text = "$50"
 			color = Art.c("gold")
 		_:
 			var col: String = kind.substr(4)

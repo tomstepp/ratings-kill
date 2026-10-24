@@ -42,7 +42,7 @@ func _physics_process(_delta: float) -> void:
 	if capture_dir != "" and _frame % every == 0:
 		var img := get_viewport().get_texture().get_image()
 		img.save_png("%s/shot_%03d.png" % [capture_dir, _taken])
-		print("capture %d: frame %d, drawn %d, speaking %s, rex %s" % [_taken, _frame, Engine.get_frames_drawn(), Narrator.is_speaking(),
+		print("capture %d: frame %d, drawn %d, fps %d, speaking %s, rex %s" % [_taken, _frame, Engine.get_frames_drawn(), Engine.get_frames_per_second(), Narrator.is_speaking(),
 			GameState.level.rex.global_position if GameState.level else "-"])
 		_images.append(img)
 		_taken += 1

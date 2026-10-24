@@ -721,47 +721,108 @@ def gen_ui():
 
 
 # --------------------------------------------------------------------- Tiles
+# One sheet per floor, same 14-tile layout:
+#  0 wall  1 floor top  2 floor fill  3 grate  4 bridge  5 fake wall  6 backdrop
+#  7 backdrop band  8 pillar  9 poster  10 rail off  11 rail on  12 belt left  13 belt right
 
-def gen_tiles():
-    tiles = []
+THEMES = {
+    # Floor 1: rusty subway, terracotta floors, dark navy backdrop.
+    "subway": {"wall": "M", "mortar": "K", "hi": "O", "floor": "M", "stripe": "Y", "lip": "O",
+               "bg": "N", "grout": "S", "band": "T", "band_hi": "C", "pillar": "S", "pillar_hi": "P"},
+    # Floor 2: the mall after hours. Teal shopfront tiles, peach marble floors.
+    "mall": {"wall": "T", "mortar": "S", "hi": "C", "floor": "F", "stripe": "V", "lip": "W",
+             "bg": "S", "grout": "N", "band": "V", "band_hi": "F", "pillar": "P", "pillar_hi": "L"},
+    # Floor 3: studio backlot. Plywood set flats, stage-board floors, black rigging.
+    "backlot": {"wall": "O", "mortar": "M", "hi": "F", "floor": "M", "stripe": "W", "lip": "O",
+                "bg": "K", "grout": "N", "band": "M", "band_hi": "Y", "pillar": "S", "pillar_hi": "P"},
+    # Floor 4: Network HQ. Steel panels, midnight floors with cyan trim, server racks.
+    "hq": {"wall": "P", "mortar": "S", "hi": "L", "floor": "T", "stripe": "C", "lip": "L",
+           "bg": "N", "grout": "K", "band": "G", "band_hi": "g", "pillar": "K", "pillar_hi": "S"},
+}
 
-    def brick(fake=False):
+
+def gen_tiles(name):
+    th = {k: CH[v] for k, v in THEMES[name].items()}
+
+    def wall(fake=False):
         t = Canvas(16, 16)
-        t.rect(0, 0, 16, 16, CH["M"])
-        for y in (0, 8):
-            t.rect(0, y, 16, 1, CH["K"])
-        for x in (0, 8):
-            t.rect(x, 1, 1, 7, CH["K"])
-        for x in (4, 12):
-            t.rect(x, 9, 1, 7, CH["K"])
-        for (x, y) in ((1, 1), (9, 1), (5, 9), (13, 9)):
-            t.put(x, y, CH["O"])
-            t.put(x + 1, y, CH["O"])
+        t.rect(0, 0, 16, 16, th["wall"])
+        if name == "hq":
+            # Riveted panels.
+            t.rect(0, 0, 16, 1, th["hi"]); t.rect(0, 15, 16, 1, th["mortar"])
+            t.rect(0, 0, 1, 16, th["hi"]); t.rect(15, 0, 1, 16, th["mortar"])
+            for (x, y) in ((2, 2), (13, 2), (2, 13), (13, 13)):
+                t.put(x, y, th["mortar"])
+            t.rect(4, 7, 8, 2, th["mortar"])
+        elif name == "backlot":
+            # Plywood flat with wood grain and a brace.
+            for y in (3, 7, 12):
+                for x in range(16):
+                    if (x + y) % 5:
+                        t.put(x, y, th["mortar"])
+            t.rect(0, 0, 16, 1, th["hi"])
+            t.rect(0, 15, 16, 1, CH["K"])
+            for i in range(16):
+                t.put(i, 15 - i, th["hi"])
+        else:
+            for y in (0, 8):
+                t.rect(0, y, 16, 1, th["mortar"])
+            for x in (0, 8):
+                t.rect(x, 1, 1, 7, th["mortar"])
+            for x in (4, 12):
+                t.rect(x, 9, 1, 7, th["mortar"])
+            for (x, y) in ((1, 1), (9, 1), (5, 9), (13, 9)):
+                t.put(x, y, th["hi"])
+                t.put(x + 1, y, th["hi"])
         if fake:
             t.put(10, 4, CH["K"])
             t.put(11, 5, CH["K"])
         return t
 
     floor_top = Canvas(16, 16)
-    floor_top.rect(0, 0, 16, 16, CH["M"])
-    floor_top.rect(0, 0, 16, 1, CH["O"])
-    floor_top.rect(0, 1, 16, 2, CH["Y"])
-    for x in range(0, 16, 6):
-        floor_top.rect(x, 1, 3, 2, CH["K"])
+    floor_top.rect(0, 0, 16, 16, th["floor"])
+    floor_top.rect(0, 0, 16, 1, th["lip"])
+    floor_top.rect(0, 1, 16, 2, th["stripe"])
+    if name == "subway":
+        for x in range(0, 16, 6):
+            floor_top.rect(x, 1, 3, 2, CH["K"])
     floor_top.rect(0, 3, 16, 1, CH["K"])
-    for (x, y) in ((3, 7), (11, 9), (6, 12), (14, 13), (1, 11)):
-        floor_top.put(x, y, CH["O"])
-
     fill = Canvas(16, 16)
-    fill.rect(0, 0, 16, 16, CH["M"])
-    for (x, y) in ((2, 3), (9, 1), (13, 6), (5, 9), (11, 12), (1, 14), (7, 14)):
-        fill.put(x, y, CH["O"])
-    for (x, y) in ((4, 5), (12, 2), (8, 10), (14, 14)):
-        fill.put(x, y, CH["K"])
+    fill.rect(0, 0, 16, 16, th["floor"])
+    if name == "mall":
+        # Marble checker.
+        for y in range(4, 16):
+            for x in range(16):
+                if ((x // 4) + (y // 4)) % 2:
+                    floor_top.put(x, y, CH["O"])
+        for y in range(16):
+            for x in range(16):
+                if ((x // 4) + (y // 4)) % 2:
+                    fill.put(x, y, CH["O"])
+    elif name == "backlot":
+        # Stage boards.
+        for y in (8, 15):
+            floor_top.rect(0, y, 16, 1, CH["K"])
+        for y in (4, 11):
+            fill.rect(0, y, 16, 1, CH["K"])
+        floor_top.rect(5, 4, 1, 4, CH["K"]); floor_top.rect(12, 9, 1, 6, CH["K"])
+        fill.rect(9, 0, 1, 4, CH["K"]); fill.rect(3, 5, 1, 6, CH["K"])
+    elif name == "hq":
+        floor_top.rect(0, 9, 16, 1, CH["N"])
+        fill.rect(0, 7, 16, 1, CH["N"])
+        for (x, y) in ((3, 12), (11, 5)):
+            fill.put(x, y, CH["T"])
+    else:
+        for (x, y) in ((3, 7), (11, 9), (6, 12), (14, 13), (1, 11)):
+            floor_top.put(x, y, CH["O"])
+        for (x, y) in ((2, 3), (9, 1), (13, 6), (5, 9), (11, 12), (1, 14), (7, 14)):
+            fill.put(x, y, CH["O"])
+        for (x, y) in ((4, 5), (12, 2), (8, 10), (14, 14)):
+            fill.put(x, y, CH["K"])
 
     grate = Canvas(16, 16)
     grate.rect(0, 0, 16, 1, CH["L"])
-    grate.rect(0, 1, 16, 3, CH["P"])
+    grate.rect(0, 1, 16, 3, CH["P"] if name != "backlot" else CH["M"])
     grate.rect(0, 4, 16, 1, CH["K"])
     for x in range(1, 16, 3):
         grate.put(x, 2, CH["K"])
@@ -778,43 +839,63 @@ def gen_tiles():
     bridge.rect(0, 6, 16, 1, CH["K"])
 
     bg = Canvas(16, 16)
-    bg.rect(0, 0, 16, 16, CH["N"])
-    for y in (0, 8):
-        bg.rect(0, y, 16, 1, CH["S"])
-    for x in (0, 8):
-        bg.rect(x, 0, 1, 16, CH["S"])
+    bg.rect(0, 0, 16, 16, th["bg"])
+    if name == "backlot":
+        # Rigging grid in the dark.
+        for x in (3, 11):
+            for y in range(0, 16, 2):
+                bg.put(x, y, th["grout"])
+    elif name == "hq":
+        # Server rack: vents and blinking lights.
+        bg.rect(1, 0, 14, 16, CH["K"])
+        for y in (2, 6, 10, 14):
+            bg.rect(2, y, 12, 2, th["grout"] if y % 8 else CH["S"])
+        bg.put(12, 2, CH["g"]); bg.put(12, 10, CH["C"])
+    else:
+        for y in (0, 8):
+            bg.rect(0, y, 16, 1, th["grout"])
+        for x in (0, 8):
+            bg.rect(x, 0, 1, 16, th["grout"])
 
     bg_band = Canvas(16, 16)
     bg_band.blit(bg, 0, 0)
-    bg_band.rect(0, 5, 16, 6, CH["T"])
-    bg_band.rect(0, 5, 16, 1, CH["C"])
+    bg_band.rect(0, 5, 16, 6, th["band"])
+    bg_band.rect(0, 5, 16, 1, th["band_hi"])
     bg_band.rect(0, 10, 16, 1, CH["K"])
+    if name == "mall":
+        # Shop window glow.
+        bg_band.rect(2, 7, 4, 2, CH["Y"]); bg_band.rect(10, 7, 4, 2, CH["C"])
 
     pillar = Canvas(16, 16)
     pillar.blit(bg, 0, 0)
-    pillar.rect(4, 0, 8, 16, CH["S"])
-    pillar.rect(5, 0, 1, 16, CH["P"])
+    pillar.rect(4, 0, 8, 16, th["pillar"])
+    pillar.rect(5, 0, 1, 16, th["pillar_hi"])
     pillar.rect(11, 0, 1, 16, CH["N"])
 
     poster = Canvas(16, 16)
     poster.blit(bg, 0, 0)
     poster.rect(2, 1, 12, 14, CH["K"])
-    poster.rect(3, 2, 10, 12, CH["S"])
-    poster.ascii([
-        "PP.P.P",
-        "P.PPP.",
-        "PP.P..",
-        "P.PP.P",
-    ], 5, 4)
-    poster.rect(3, 10, 10, 1, CH["S"])
-    poster.rect(4, 12, 8, 1, CH["P"])
+    if name == "mall":
+        poster.rect(3, 2, 10, 12, CH["R"])
+        poster.ascii(["WWW.W.", "W..W.W", "WWW.WW", "..WW.W", "WWW.W."], 5, 4)  # SALE-ish
+    elif name == "backlot":
+        poster.rect(3, 4, 10, 7, CH["R"])
+        poster.ascii(["W.W.W", "WWW.W", "W.W.W"], 5, 6)  # ON AIR light
+        poster.rect(3, 4, 10, 1, CH["V"])
+    elif name == "hq":
+        poster.rect(3, 2, 10, 12, CH["T"])
+        poster.ascii(["..YY..", ".Y..Y.", "YYYYYY", ".Y..Y.", "..YY.."], 5, 5)  # the network's star-eye
+    else:
+        poster.rect(3, 2, 10, 12, CH["S"])
+        poster.ascii(["PP.P.P", "P.PPP.", "PP.P..", "P.PP.P"], 5, 4)
+        poster.rect(3, 10, 10, 1, CH["S"])
+        poster.rect(4, 12, 8, 1, CH["P"])
 
     rail_off = Canvas(16, 16)
     rail_off.rect(0, 12, 16, 2, CH["L"])
     rail_off.rect(0, 14, 16, 2, CH["S"])
     for x in (2, 10):
         rail_off.rect(x, 13, 3, 3, CH["N"])
-
     rail_on = Canvas(16, 16)
     rail_on.blit(rail_off, 0, 0)
     rail_on.rect(0, 12, 16, 1, CH["W"])
@@ -826,8 +907,276 @@ def gen_tiles():
         "......W.........",
     ], 0, 7)
 
-    tiles = [brick(), floor_top, fill, grate, bridge, brick(True), bg, bg_band, pillar, poster, rail_off, rail_on]
-    save(strip(tiles), os.path.join(TILES, "subway.png"))
+    def belt(right):
+        t = Canvas(16, 16)
+        t.rect(0, 0, 16, 16, CH["S"])
+        t.rect(0, 0, 16, 1, CH["L"])
+        t.rect(0, 1, 16, 5, CH["P"])
+        # Chevrons point the way the tread moves.
+        for x0 in (1, 9):
+            for i in range(3):
+                xx = x0 + (i if right else 2 - i)
+                t.put(xx, 2 + i if i < 2 else 3, CH["Y"])
+                t.put(xx, 4 - i if i < 2 else 3, CH["Y"])
+        t.rect(0, 6, 16, 1, CH["K"])
+        for x in (2, 7, 12):
+            t.ellipse(x + 1, 10, 2, 2, CH["P"])
+            t.put(x + 1, 10, CH["K"])
+        t.rect(0, 15, 16, 1, CH["K"])
+        return t
+
+    tiles = [wall(), floor_top, fill, grate, bridge, wall(True), bg, bg_band, pillar, poster,
+             rail_off, rail_on, belt(False), belt(True)]
+    save(strip(tiles), os.path.join(TILES, name + ".png"))
+
+
+# ------------------------------------------------------------ Floor 2-4 cast
+
+def gen_guard():
+    """Mall security bot, 16x24: a squat robot in a cop cap with a flashlight."""
+    body = [
+        "",
+        ".....SSSSSS.....",
+        "....SSSSSSSS....",
+        "...KKKKKKKKKK...",
+        ".....PPPPPP.....",
+        "....PCCPPCCP....",
+        "....PPPPPPPP....",
+        ".....PPPPPP.....",
+        "....SSSSSSSS....",
+        "...SSSSYSSSSS...",
+        "...SSSSSSSSSSYY.",
+        "...SSSSSSSSSSYW.",
+        "...SSSSSSSSSS...",
+        "....SSSSSSSS....",
+        "....KKKKKKKK....",
+        "....PP....PP....",
+    ]
+    a = sprite(16, 24, body + ["....PP....PP....", "...KKK....KKK..."], oy=5)
+    b = sprite(16, 24, body + ["...PP......PP...", "..KKK......KKK.."], oy=5)
+    aim = list(body)
+    aim[5] = "....PRRPPRRP...."
+    aim[10] = "...SSSSSSSSSYYWW"
+    aim[11] = "...SSSSSSSSSYYWW"
+    c = sprite(16, 24, aim + ["....PP....PP....", "...KKK....KKK..."], oy=5)
+    # Facing left by default: the sheet is drawn facing right, so mirror it.
+    save(strip([mirror(a), mirror(b), mirror(c)]), os.path.join(SPRITES, "guard.png"))
+
+
+def mirror(c):
+    out = Canvas(c.w, c.h)
+    for y in range(c.h):
+        for x in range(c.w):
+            out.px[y][c.w - 1 - x] = c.px[y][x]
+    return out
+
+
+def gen_mannequin():
+    """A blank display mannequin, 16x32, in a sale sash."""
+    def frame(step):
+        c = Canvas(16, 32)
+        W, L, V, K = CH["W"], CH["L"], CH["V"], CH["K"]
+        c.ellipse(8, 5, 3, 4, W)
+        c.rect(7, 9, 2, 2, L)
+        c.rect(4, 11, 8, 9, W)
+        c.rect(5, 19, 6, 2, L)
+        for i in range(8):
+            c.put(4 + i, 12 + i // 2, V)
+            c.put(5 + i, 12 + i // 2, V)
+        if step == 0:
+            c.rect(2, 12, 2, 8, W); c.rect(12, 12, 2, 8, W)
+            c.rect(5, 21, 2, 10, W); c.rect(9, 21, 2, 10, W)
+        elif step == 1:
+            c.rect(2, 11, 2, 7, W); c.rect(12, 13, 2, 7, W)
+            c.rect(4, 21, 2, 10, W); c.rect(10, 21, 2, 9, W)
+        else:
+            c.rect(2, 13, 2, 7, W); c.rect(12, 11, 2, 7, W)
+            c.rect(6, 21, 2, 9, W); c.rect(8, 21, 2, 10, W)
+        c.put(7, 4, CH["P"]); c.put(9, 4, CH["P"])
+        return c.outline()
+    save(strip([frame(0), frame(1), frame(2)]), os.path.join(SPRITES, "mannequin.png"))
+
+
+def gen_drones():
+    mic_a = sprite(16, 16, [
+        "",
+        "LL.........LL...",
+        ".SSSSSSSSSSSSS..",
+        ".......SS.......",
+        "....PPPPPPPP....",
+        "...PPRPPPPPPP...",
+        "...PPPPPPPPPP...",
+        "....PPPPPPPP....",
+        "......SSS.......",
+        ".......S........",
+        ".......S........",
+        "......KKKK......",
+        ".....KSKSKK.....",
+        ".....KKSKSK.....",
+        "......KKKK......",
+    ])
+    mic_b = sprite(16, 16, [
+        "",
+        "..LL.....LL.....",
+    ] + [r for r in [
+        ".SSSSSSSSSSSSS..",
+        ".......SS.......",
+        "....PPPPPPPP....",
+        "...PPPPPPPPRP...",
+        "...PPPPPPPPPP...",
+        "....PPPPPPPP....",
+        "......SSS.......",
+        ".......S........",
+        ".......S........",
+        "......KKKK......",
+        ".....KSKSKK.....",
+        ".....KKSKSK.....",
+        "......KKKK......",
+    ]])
+    save(strip([mic_a, mic_b]), os.path.join(SPRITES, "micdrone.png"))
+    base = [
+        "",
+        "",
+        "...SS......SS...",
+        "..SPPS....SPPS..",
+        "...SSKKKKKKSS...",
+        ".....KTTTTK.....",
+        "....KTTTTTTK....",
+        "...KTTCCCCTTK...",
+        "...KTTCWWCTTK...",
+        "...KTTCCCCTTK...",
+        "....KTTTTTTK....",
+        ".....KKKKKK.....",
+        "......S..S......",
+    ]
+    a = sprite(16, 16, base)
+    b = list(base); b[2] = "..SS........SS.."; b = sprite(16, 16, b)
+    ch = list(base); ch[7] = "...KTTRRRRTTK..."; ch[8] = "...KTTRWWRTTK..."; ch[9] = "...KTTRRRRTTK..."
+    save(strip([a, b, sprite(16, 16, ch)]), os.path.join(SPRITES, "execdrone.png"))
+    clip = sprite(12, 10, ["", "..PPPP......", ".SWWWWWS....", ".SWKKKWS....", ".SWWWWWS....",
+                            ".SWKKWWS....", ".SWWWWWS....", ".SSSSSSS...."], ox=1)
+    save(clip, os.path.join(SPRITES, "clipboard.png"))
+
+
+def manager_frame(pose):
+    """Floor 2 boss: the Floor Manager, tie and headset, on a motorized cart. 40x40."""
+    c = Canvas(40, 40)
+    K, W, F, R, S, P, Y, L, T = (CH[k] for k in "KWFRSPYLT")
+    # Cart
+    c.rect(4, 30, 32, 6, R)
+    c.rect(4, 30, 32, 1, W)
+    c.rect(6, 32, 6, 2, Y)
+    wheel = 0 if pose != "drive2" else 1
+    for x in (9, 30):
+        c.ellipse(x, 37, 3, 2, K)
+        c.put(x + wheel, 37, P)
+    # Body: shirt, tie, blazer
+    lean = 2 if pose in ("drive1", "drive2") else 0
+    c.rect(12 - lean, 16, 16, 14, T)
+    c.rect(17 - lean, 16, 6, 14, W)
+    c.rect(19 - lean, 17, 2, 10, R)
+    # Head
+    c.ellipse(20 - lean, 10, 6, 6, F)
+    c.rect(14 - lean, 3, 12, 3, K)  # slicked hair
+    c.rect(14 - lean, 9, 2, 4, S)  # headset
+    c.rect(15 - lean, 13, 4, 1, S)
+    if pose == "hurt":
+        c.ascii(["K.K", ".K.", "K.K"], 16 - lean, 8); c.ascii(["K.K", ".K.", "K.K"], 22 - lean, 8)
+        c.ellipse(20 - lean, 14, 2, 1, K)
+    else:
+        c.rect(17 - lean, 9, 2, 2, K); c.rect(22 - lean, 9, 2, 2, K)
+        c.rect(16 - lean, 7, 3, 1, K); c.rect(22 - lean, 7, 3, 1, K)
+        c.rect(18 - lean, 13, 5, 1, K)
+    # Arms
+    if pose == "shout":
+        # Megaphone held out front
+        c.rect(26, 15, 6, 3, T)
+        c.ascii(["....YY", "..YYYY", "YYYYYY", "YYYYYY", "..YYYY", "....YY"], 31, 11)
+        c.rect(15, 13, 4, 2, K)  # open mouth
+    elif pose == "throw":
+        c.rect(26, 8, 3, 9, T)
+        c.rect(26, 4, 6, 5, W); c.rect(27, 5, 4, 1, K)
+    else:
+        c.rect(8 - lean, 18, 4, 8, T); c.rect(28 - lean, 18, 4, 8, T)
+        c.ellipse(10 - lean, 27, 2, 2, F); c.ellipse(30 - lean, 27, 2, 2, F)
+    return c.outline()
+
+
+def director_frame(pose):
+    """Floor 3 boss: the Director in his crane seat, beret and megaphone. 40x32."""
+    c = Canvas(40, 32)
+    K, W, F, R, S, P, Y, V, M = (CH[k] for k in "KWFRSPYVM")
+    # Crane seat
+    c.rect(6, 24, 28, 5, P)
+    c.rect(6, 24, 28, 1, CH["L"])
+    c.rect(17, 2, 6, 2, S)  # arm mount (the arm itself is drawn in-game)
+    c.rect(8, 18, 3, 6, P); c.rect(29, 18, 3, 6, P)
+    # Body
+    c.rect(12, 14, 16, 10, K)
+    c.rect(18, 14, 4, 6, W)
+    # Head with beret and shades
+    c.ellipse(20, 9, 6, 5, F)
+    c.ellipse(19, 4, 7, 2, R); c.put(19, 1, R)
+    if pose == "hurt":
+        c.ascii(["K.K", ".K.", "K.K"], 15, 7); c.ascii(["K.K", ".K.", "K.K"], 22, 7)
+    else:
+        c.rect(14, 7, 12, 3, K); c.put(16, 8, W); c.put(23, 8, W)
+        c.rect(17, 12, 6, 1, K if pose != "shout" else R)
+    if pose == "shout":
+        c.ascii(["....YY", "..YYYY", "YYYYYY", "YYYYYY", "..YYYY", "....YY"], 28, 12)
+        c.rect(25, 14, 4, 3, K)
+    else:
+        # Clapperboard in hand
+        c.rect(27, 15 + (1 if pose == "idle2" else 0), 8, 6, K)
+        c.rect(27, 14 + (1 if pose == "idle2" else 0), 8, 2, W)
+        c.put(29, 14, K); c.put(32, 15, K)
+    c.rect(5, 15, 7, 3, K); c.ellipse(5, 17, 2, 2, F)
+    return c.outline()
+
+
+def finale_frame(pose):
+    """Floor 4 boss: the Showrunner as a giant broadcast screen, 48x56."""
+    c = Canvas(48, 56)
+    K, W, V, S, P, R, C, Y, N, L = (CH[k] for k in "KWVSPRCYNL")
+    c.rect(2, 2, 44, 46, K)
+    c.rect(3, 3, 42, 44, V)
+    c.rect(4, 4, 40, 4, CH["F"])
+    c.rect(6, 10, 36, 30, W if pose not in ("open", "open2") else N)
+    # Antennae and stand
+    c.rect(12, 0, 2, 3, L); c.rect(34, 0, 2, 3, L)
+    c.rect(16, 48, 16, 4, S); c.rect(10, 52, 28, 4, S)
+    c.put(4, 43, R); c.put(6, 43, Y); c.put(8, 43, C)
+    if pose in ("open", "open2"):
+        # The core behind the screen.
+        r = 8 if pose == "open" else 9
+        c.ellipse(24, 25, r, r, C)
+        c.ellipse(24, 25, r - 3, r - 3, W)
+        c.ellipse(24, 25, 2, 2, Y)
+        for (x, y) in ((8, 12), (38, 14), (10, 36), (37, 37)):
+            c.put(x, y, S)
+    else:
+        if pose == "hurt":
+            c.ascii(["KK.KK", ".KKK.", "KK.KK"], 12, 17); c.ascii(["KK.KK", ".KKK.", "KK.KK"], 31, 17)
+            c.ellipse(24, 32, 5, 3, K)
+        else:
+            eye_y = 16 if pose != "idle2" else 17
+            c.rect(13, eye_y, 4, 5, K); c.rect(31, eye_y, 4, 5, K)
+            if pose == "angry":
+                c.ascii(["KKKK....", "..KKKK.."], 10, eye_y - 3)
+                c.ascii(["....KKKK", "..KKKK.."], 30, eye_y - 3)
+                c.rect(14, 30, 20, 4, K); c.rect(16, 31, 16, 2, R)
+            else:
+                c.ascii(["K..............K", ".K............K.", "..KKKKKKKKKKKK.."], 16, 28)
+    return c.outline()
+
+
+def gen_bosses():
+    save(strip([manager_frame(p) for p in ["idle", "idle2", "drive1", "drive2", "shout", "throw", "hurt"]]),
+         os.path.join(SPRITES, "manager.png"))
+    save(strip([director_frame(p) for p in ["idle", "idle2", "shout", "hurt"]]),
+         os.path.join(SPRITES, "director.png"))
+    save(strip([finale_frame(p) for p in ["idle", "idle2", "angry", "open", "open2", "hurt"]]),
+         os.path.join(SPRITES, "finale.png"))
 
 
 # ---------------------------------------------------------------------- Font
@@ -893,6 +1242,11 @@ if __name__ == "__main__":
     gen_portraits()
     gen_mascot()
     gen_ui()
-    gen_tiles()
+    for theme in THEMES:
+        gen_tiles(theme)
+    gen_guard()
+    gen_mannequin()
+    gen_drones()
+    gen_bosses()
     gen_font()
     print("art generated")

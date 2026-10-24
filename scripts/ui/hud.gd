@@ -1,6 +1,7 @@
 class_name Hud
 extends CanvasLayer
-## Health pips, money, firepower, keycards, Boom's charge and the ratings meter.
+## Health pips, money, firepower, keycards, Boom's charge, the ratings meter
+## with its cash multiplier, boss health, and the end-of-level ratings report.
 
 const METER_W := 70
 
@@ -18,6 +19,10 @@ var _pause: Control
 var _pops: Array[Label] = []
 var _boss_ui: Control
 var _boss_fill: ColorRect
+var _boss_name: Label
+var _mult: Label
+var _cancel: Label
+var _report: Control
 var _t := 0.0
 
 
@@ -84,19 +89,26 @@ func _ready() -> void:
 	_meter_fill.position = Vector2(171, 13)
 	_meter_fill.size = Vector2(0, 5)
 	add_child(_meter_fill)
+	# Ticks where the cash multiplier steps up.
+	for i in [1, 2, 3]:
+		var tick := ColorRect.new()
+		tick.color = Art.c("black")
+		tick.position = Vector2(171 + METER_W * i * Ratings.TIER / Ratings.MAX, 13)
+		tick.size = Vector2(1, 5)
+		add_child(tick)
+	_mult = Art.label("", Art.c("gold"))
+	_mult.position = Vector2(246, 2)
+	add_child(_mult)
 	_viewers = Art.label("", Art.c("steel"))
 	_viewers.position = Vector2(246, 11)
 	add_child(_viewers)
-	var watching := Art.label("VIEWERS", Art.c("metal"))
-	watching.position = Vector2(246, 2)
-	add_child(watching)
 
 	_boss_ui = Control.new()
 	_boss_ui.visible = false
 	add_child(_boss_ui)
-	var boss_name := Art.label("MISTER CHEDDAR, THE MASCOT", Art.c("magenta"))
-	boss_name.position = Vector2(6, 33)
-	_boss_ui.add_child(boss_name)
+	_boss_name = Art.label("", Art.c("magenta"))
+	_boss_name.position = Vector2(6, 33)
+	_boss_ui.add_child(_boss_name)
 	var boss_bg := ColorRect.new()
 	boss_bg.color = Art.c("black")
 	boss_bg.position = Vector2(6, 43)
@@ -107,6 +119,12 @@ func _ready() -> void:
 	_boss_fill.position = Vector2(7, 44)
 	_boss_fill.size = Vector2(150, 4)
 	_boss_ui.add_child(_boss_fill)
+
+	_cancel = Art.label("", Art.c("red"))
+	_cancel.size = Vector2(320, 9)
+	_cancel.position = Vector2(0, 52)
+	_cancel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_cancel)
 
 	_flash = ColorRect.new()
 	_flash.color = Color(1, 1, 1, 0)
@@ -167,13 +185,51 @@ func _refresh() -> void:
 	_meter_fill.color = Art.c("red") if v < Ratings.BORED_BELOW else Art.c("gold") if v < 70.0 else Art.c("lime")
 	if v >= 85.0 and fmod(_t, 0.2) < 0.1:
 		_meter_fill.color = Art.c("white")
-	_viewers.text = Ratings.viewers()
-	var boss: Mascot = level.boss if level and is_instance_valid(level.boss) else null
-	_boss_ui.visible = boss != null and boss.mode != Mascot.Mode.INTRO
+	_viewers.text = Ratings.viewers() + " VIEWERS"
+	var m := Ratings.multiplier()
+	_mult.text = "CASH X%d" % m
+	_mult.add_theme_color_override("font_color", [Art.c("metal"), Art.c("steel"), Art.c("gold"), Art.c("lime")][m - 1])
+	if Ratings.cancel_t > 0.0:
+		var left := ceili(Ratings.CANCEL_AFTER - Ratings.cancel_t)
+		_cancel.text = "NO ONE IS WATCHING! CANCELED IN %d..." % left
+		_cancel.visible = fmod(_t, 0.4) < 0.28
+	else:
+		_cancel.visible = false
+	var boss: Boss = level.boss if level and is_instance_valid(level.boss) else null
+	_boss_ui.visible = boss != null and not boss.in_intro()
 	if boss:
+		_boss_name.text = boss.display_name
 		_boss_fill.size.x = 150.0 * boss.health_ratio()
 		_boss_fill.color = Art.c("red") if boss.health_ratio() <= 0.5 else Art.c("magenta")
 	_live.visible = fmod(_t, 1.0) < 0.6
+
+
+## The end-of-level card: average rating, grade and the bonus it paid.
+func show_report(r: Dictionary) -> void:
+	_report = Control.new()
+	add_child(_report)
+	var panel := ColorRect.new()
+	panel.color = Color(Art.c("black"), 0.88)
+	panel.position = Vector2(80, 40)
+	panel.size = Vector2(160, 76)
+	_report.add_child(panel)
+	var lines := [
+		["RATINGS REPORT", Art.c("magenta")],
+		["AVERAGE RATING   %d" % roundi(r.average), Art.c("white")],
+		["PEAK RATING      %d" % roundi(r.peak), Art.c("white")],
+		["GRADE            %s" % r.grade, Art.c("gold")],
+		["NETWORK BONUS    $%d" % r.bonus, Art.c("lime")],
+	]
+	for i in lines.size():
+		var l := Art.label(lines[i][0], lines[i][1])
+		l.position = Vector2(88, 46 + i * 13)
+		_report.add_child(l)
+	var big := Art.label(r.grade, Art.c("gold"), 3)
+	big.position = Vector2(214, 82)
+	_report.add_child(big)
+	_report.modulate.a = 0.0
+	create_tween().tween_property(_report, "modulate:a", 1.0, 0.3)
+	Sfx.play("achieve")
 
 
 func flash() -> void:

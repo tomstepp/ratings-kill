@@ -23,6 +23,9 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1 | 16
 	_build()
+	# Network HQ hits harder.
+	if GameState.difficulty() >= 3:
+		contact_damage += 1
 	_stars = Art.label("*", Art.c("gold"))
 	_stars.position = Vector2(-3, -top_offset - 12)
 	_stars.visible = false
@@ -106,16 +109,21 @@ func kill(how: String) -> void:
 	dead = true
 	remove_from_group("enemies")
 	set_deferred("collision_layer", 0)
-	GameState.add_points(points)
+	var paid := GameState.add_points(points, true)
 	GameState.stat("kills")
 	Ratings.on_kill(how, was_stunned)
 	var level = GameState.level
 	if level:
-		level.float_text(global_position + Vector2(0, -top_offset - 6), "$%d" % points, Art.c("gold"))
+		level.float_text(global_position + Vector2(0, -top_offset - 6), _cash_text(paid), Art.c("gold"))
 		var rex: Rex = level.rex
 		if rex and randf() < 0.45:
 			rex.quip("stomp" if how == "stomp" else "kill")
 	_die_visual(how)
+
+
+static func _cash_text(paid: int) -> String:
+	var m := Ratings.multiplier()
+	return "$%d" % paid if m <= 1 else "$%d X%d" % [paid, m]
 
 
 ## Default death: pop into sparks.
