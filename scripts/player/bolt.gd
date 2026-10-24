@@ -1,11 +1,13 @@
 class_name Bolt
 extends Area2D
-## Rex's blaster shot. Flies horizontally; breaks crates, hurts enemies.
+## Rex's blaster shot. Flies horizontally (or along a slight fan angle with
+## firepower upgrades); breaks crates, hurts enemies.
 
 const SPEED := 290.0
 const LIFETIME := 0.85
 
 var direction := 1
+var rise := 0.0  # vertical px per horizontal px (the fan angle)
 var _life := LIFETIME
 var _done := false
 
@@ -26,7 +28,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	position.x += direction * SPEED * delta
+	position += Vector2(direction, rise) * SPEED * delta
 	_life -= delta
 	if _life <= 0.0:
 		queue_free()

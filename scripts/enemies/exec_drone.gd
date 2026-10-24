@@ -14,7 +14,7 @@ var _side := 1.0
 
 
 func _build() -> void:
-	hp = 3
+	hp = 4
 	points = 400
 	top_offset = 12.0
 	collision_mask = 1  # flies, but not through walls

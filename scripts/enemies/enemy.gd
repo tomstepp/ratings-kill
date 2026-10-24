@@ -23,6 +23,9 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1 | 16
 	_build()
+	# Grunts get tougher floor by floor (bosses are tuned by hand).
+	if not self is Boss:
+		hp = ceili(hp * (1.0 + 0.35 * GameState.difficulty()))
 	# Network HQ hits harder.
 	if GameState.difficulty() >= 3:
 		contact_damage += 1

@@ -270,11 +270,14 @@ func _check_enemy_contacts(prev_feet: float, falling: bool) -> void:
 
 func _shoot() -> void:
 	_shot_cd = SHOT_COOLDOWN
-	var offsets: Array = [[0], [-3, 3], [-5, 0, 5], [-6, -2, 2, 6]][GameState.firepower - 1]
-	for off in offsets:
+	# Extra firepower fans out (degrees) rather than stacking on one target, so
+	# upgrades cover more of the screen without melting everything up close.
+	var angles: Array = [[0], [-6, 6], [-11, 0, 11], [-16, -5, 5, 16]][GameState.firepower - 1]
+	for a in angles:
 		var b := Bolt.new()
 		b.direction = facing
-		b.global_position = global_position + Vector2(facing * 11, -14 + off)
+		b.rise = tan(deg_to_rad(a))
+		b.global_position = global_position + Vector2(facing * 11, -14)
 		GameState.level.add_child(b)
 	Sfx.play_varied("shoot", 0.06, -5.0)
 	GameState.stat("shots")

@@ -152,10 +152,10 @@ func _combat_checks() -> void:
 	await frames(3)
 	rex.facing = 1
 	Input.action_press("shoot")
-	await frames(3)
+	await frames(40)
 	Input.action_release("shoot")
 	await frames(30)
-	check("shot kills a rat drone", not is_instance_valid(rat) or rat.dead)
+	check("held fire kills a rat drone (2 hits)", not is_instance_valid(rat) or rat.dead)
 
 	# Holding fire into empty air: one short burst, then nothing until re-pressed.
 	await frames(30)
@@ -357,7 +357,7 @@ func _show_checks() -> void:
 	var enemies_before := get_tree().get_nodes_in_group("enemies").size()
 	var lights_before := 0
 	Ratings.boredom.emit()
-	await frames(60)
+	await frames(10)
 	var lights := 0
 	for n in level.get_children():
 		if n is StageLight:
@@ -476,10 +476,16 @@ func _phase4_checks() -> void:
 	rat.position = Vector2(-1000, -1000)
 	level.add_child(rat)
 	await frames(2)
-	rat.shot(1, null)
+	var plain := RatDrone.new()
+	plain.position = Vector2(-1100, -1000)
+	level.add_child(plain)
+	await frames(2)
+	check("fast rats are tougher, and Floor 2 grunts tougher than Floor 1's", rat.hp > plain.hp and plain.hp > 2,
+		"(fast %d, plain %d)" % [rat.hp, plain.hp])
+	rat.shot(rat.hp - 1, null)
 	var survived := not rat.dead
 	rat.shot(1, null)
-	check("fast rat takes two hits", survived and rat.dead)
+	check("fast rat dies on its last hit point", survived and rat.dead)
 
 	# Mister Cheddar ends Floor 1: the floor card, then the break room; the run is saved.
 	var boss: Boss = await boss_fight(3, "the Mascot")
@@ -541,6 +547,20 @@ func _season_checks() -> void:
 	check("low ratings pay x1", Ratings.multiplier() == 1)
 	var r := Ratings.report()
 	check("ratings report grades the level", r.has("grade") and r.has("bonus"))
+
+	# Rats lunge at Rex when he's close and level with them.
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
+	await place_rex(Vector2i(19, 19))
+	var lunger := RatDrone.new()
+	lunger.dir = 1  # walking away from Rex
+	lunger.position = rex.global_position + Vector2(60, 0)
+	level.add_child(lunger)
+	await frames(20)
+	check("rats lunge at a nearby Rex", lunger.dir == -1 and absf(lunger.velocity.x) > lunger.speed * 1.5,
+		"(dir %d, vx %.0f)" % [lunger.dir, lunger.velocity.x])
+	lunger.queue_free()
+	GameState.health = GameState.MAX_HEALTH
 
 	# Corner correction: clipping a ledge corner mid-jump nudges Rex past it.
 	var corner := Vector2i(-1, -1)

@@ -12,7 +12,7 @@ var _t := 1.2
 
 
 func _build() -> void:
-	hp = 3
+	hp = 4
 	points = 250
 	stompable = false
 	top_offset = 11.0

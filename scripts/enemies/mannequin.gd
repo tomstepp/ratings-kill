@@ -10,7 +10,7 @@ var speed := 72.0
 
 
 func _build() -> void:
-	hp = 4
+	hp = 5
 	points = 350
 	top_offset = 30.0
 	contact_damage = 2

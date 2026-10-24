@@ -18,7 +18,7 @@ var _beam: Polygon2D
 
 
 func _build() -> void:
-	hp = 3
+	hp = 4
 	points = 300
 	top_offset = 22.0
 	speed *= 1.0 + 0.1 * GameState.difficulty()

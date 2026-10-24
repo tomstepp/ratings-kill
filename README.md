@@ -27,7 +27,8 @@ episode.
 - **Ratings**: the meter sets a cash multiplier (x1 to x4) on everything earned on air; each level ends with a ratings
   report (average, peak, grade S to D, network bonus); a full meter brings a sponsor drop; a low one brings boredom
   penalties; and from Floor 3 on, an empty meter for 6 seconds gets the episode canceled
-- **Difficulty**: enemies get faster and shoot more often floor by floor, the meter drains faster, shop prices rise, and
+- **Difficulty**: grunts take more hits floor by floor (+35% health per floor), rats lunge when Rex gets close,
+  firepower upgrades fan out instead of stacking on one target, enemies get faster and shoot more often, the meter drains faster, shop prices rise, and
   Network HQ hits harder
 - **Saving**: progress saves after every level; Continue on the title screen resumes in the break room
 - **Show layer**: Showrunner and B0-0M dialogue (narrated), 19 achievements, the break-room shop, Boom's flash-stun,
