@@ -21,7 +21,7 @@ var _next_title := ""
 func _ready() -> void:
 	backdrop(0.25)
 	var floor_rect := ColorRect.new()
-	floor_rect.color = Art.c("slate")
+	floor_rect.color = Art.c("rust")
 	floor_rect.position = Vector2(0, 150)
 	floor_rect.size = Vector2(320, 30)
 	add_child(floor_rect)
@@ -32,7 +32,7 @@ func _ready() -> void:
 	add_child(stripe)
 	# A sad couch and a vending machine. Glamour.
 	var couch := ColorRect.new()
-	couch.color = Art.c("maroon")
+	couch.color = Art.c("pine")
 	couch.position = Vector2(12, 134)
 	couch.size = Vector2(44, 16)
 	add_child(couch)
@@ -170,7 +170,7 @@ func _refresh() -> void:
 		if i == _cursor:
 			color = Art.c("gold")
 		elif item.id != "go" and (_maxed(item.id) or GameState.points < item.cost):
-			color = Art.c("dusty")
+			color = Art.c("metal")
 		_rows[i].add_theme_color_override("font_color", color)
 	var sel: Dictionary = ITEMS[_cursor]
 	_desc.text = "NEXT: " + _next_title.to_upper() if sel.id == "go" else sel.desc

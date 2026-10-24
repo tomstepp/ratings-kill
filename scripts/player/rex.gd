@@ -48,6 +48,7 @@ var _buffer := 0.0
 var _shot_cd := 0.0
 var _invuln := 0.0
 var _hurt := 0.0
+var _knock := 0.0
 var _drop_t := 0.0
 var _was_pushing_wall := false
 var _quip_cd := 0.0
@@ -121,7 +122,7 @@ func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	var target := dir * RUN_SPEED
 	var accel: float
-	if _hurt > 0.0:
+	if _hurt > 0.0 or _knock > 0.0:
 		accel = AIR_DECEL
 		target = velocity.x
 	elif dir != 0.0:
@@ -191,6 +192,7 @@ func _tick_timers(delta: float) -> void:
 	_buffer -= delta
 	_shot_cd -= delta
 	_hurt -= delta
+	_knock -= delta
 	_quip_cd -= delta
 	if _drop_t > 0.0:
 		_drop_t -= delta
@@ -253,6 +255,12 @@ func stomp_bounce() -> void:
 	Ratings.on_stomp_chain(stomp_chain)
 	if stomp_chain >= 3:
 		Showrunner.unlock("chain3")
+
+
+## Shove Rex sideways; he can't steer against it for a moment.
+func knock(vx: float, time := 0.35) -> void:
+	velocity.x = vx
+	_knock = time
 
 
 func is_invulnerable() -> bool:
@@ -324,6 +332,7 @@ func quip(kind: String, force := false) -> void:
 		return
 	_quip_cd = 4.0
 	_bubble.text = QUIPS[kind].pick_random()
+	Narrator.bark(_bubble.text, "rex")
 	_bubble.size.x = _bubble.text.length() * 6 + 2
 	_bubble.visible = true
 	_place_bubble()

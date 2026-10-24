@@ -3,10 +3,10 @@ extends Node
 ## Every texture comes from tools/gen_art.py; re-run it after changing art.
 
 const PALETTE := {
-	"black": Color("0b0b14"), "navy": Color("22203b"), "slate": Color("3c3a63"),
-	"dusty": Color("6c6f9e"), "steel": Color("b3bbd9"), "white": Color("f4f1e8"),
-	"gold": Color("f2c14e"), "orange": Color("e07a32"), "red": Color("b83240"),
-	"maroon": Color("5e1f3a"), "green": Color("2f7a4a"), "lime": Color("8fd14f"),
+	"black": Color("0b0b14"), "navy": Color("141b33"), "midnight": Color("263258"),
+	"metal": Color("5a6488"), "steel": Color("b3bbd9"), "white": Color("f6f1e7"),
+	"gold": Color("f2c14e"), "terracotta": Color("d98a4a"), "red": Color("e0473f"),
+	"rust": Color("8a4b2f"), "pine": Color("3f7d6a"), "lime": Color("8fd14f"),
 	"teal": Color("2c6e85"), "cyan": Color("66d6e8"), "magenta": Color("c75bb0"),
 	"peach": Color("f0b08c"),
 }
@@ -17,7 +17,7 @@ var font: FontFile
 
 func _ready() -> void:
 	for name in ["rex", "boom", "rat", "spark", "bolt", "enemy_bolt", "pickups", "keycards", "crate",
-			"tvblock", "doors", "switch", "sponsor_crate", "chute", "stage_light", "portraits", "ui"]:
+			"tvblock", "doors", "switch", "sponsor_crate", "chute", "stage_light", "portraits", "ui", "lift", "mascot", "shockwave", "bomb"]:
 		tex[name] = load("res://assets/sprites/%s.png" % name)
 	tex["subway"] = load("res://assets/tiles/subway.png")
 	font = _build_font()

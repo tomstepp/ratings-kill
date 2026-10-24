@@ -8,6 +8,8 @@ var points := 100
 var stompable := true
 var top_offset := 9.0  # feet-to-top distance, for stomp checks
 var contact_damage := 1
+var tint := Color.WHITE  # resting sprite color (variants can recolor)
+var anim_speed := 1.0
 
 var sprite: AnimatedSprite2D
 var stunned := 0.0
@@ -41,7 +43,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if _flash > 0.0:
 		_flash -= delta
-		sprite.modulate = Color(3, 3, 3) if _flash > 0.0 else Color.WHITE
+		sprite.modulate = Color(3, 3, 3) if _flash > 0.0 else tint
 	if stunned > 0.0:
 		stunned -= delta
 		_stars.visible = true
@@ -49,8 +51,8 @@ func _physics_process(delta: float) -> void:
 		sprite.speed_scale = 0.0
 		if stunned <= 0.0:
 			_stars.visible = false
-			sprite.speed_scale = 1.0
-			sprite.modulate = Color.WHITE
+			sprite.speed_scale = anim_speed
+			sprite.modulate = tint
 		else:
 			sprite.modulate = Color(0.6, 0.8, 1.6)
 	_behave(delta)
@@ -120,6 +122,6 @@ func kill(how: String) -> void:
 func _die_visual(_how: String) -> void:
 	Sfx.play_varied("explode", 0.1, -6.0)
 	if GameState.level:
-		GameState.level.burst(global_position + Vector2(0, -top_offset * 0.5), Art.c("orange"), 14, 90.0)
+		GameState.level.burst(global_position + Vector2(0, -top_offset * 0.5), Art.c("terracotta"), 14, 90.0)
 		GameState.level.burst(global_position + Vector2(0, -top_offset * 0.5), Art.c("steel"), 8, 60.0)
 	queue_free()

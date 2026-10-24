@@ -1,5 +1,6 @@
 name: Rush Hour Ruins
 floor: 1
+music: music_level2
 ; Legend lives in levels/README.md
 intro: showrunner|Level two! The commuters left in a hurry. Something about 'robot rats' and 'contract law'.
 intro: boom|Two keycards on this one. Red first, then blue. I'll be filming your mistakes.

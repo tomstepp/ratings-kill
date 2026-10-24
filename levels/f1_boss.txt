@@ -1,0 +1,22 @@
+name: Cheddar's Big Night
+floor: 1
+music: music_boss
+; Floor 1 finale. M is the boss, e is where the exit appears once he's beaten.
+intro: showrunner|Ladies, gentlemen, and sentient fungi... the moment you've been waiting for!
+intro: showrunner|Please welcome our beloved mascot... MISTER CHEDDAR!
+intro: boom|Shoot him anywhere. Stomp his head for a big hit. Jump his shockwaves. I'll be over here. Filming.
+---
+############################
+#..........................#
+#..........................#
+#..........................#
+#..........................#
+#..........................#
+#..........................#
+#..........................#
+#..........................#
+#...-----..........-----...#
+#..h.......................#
+#..P.........e.........M...#
+############################
+############################

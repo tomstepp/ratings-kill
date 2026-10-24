@@ -1,11 +1,11 @@
 class_name EndCard
 extends Screen
-## Shown after the last available level.
+## Shown after the Floor 1 boss: the season's first "episode" wraps.
 
 
 func _ready() -> void:
 	backdrop(0.55)
-	centered("END OF PILOT EPISODE", 14, Art.c("gold"), 2)
+	centered("FLOOR 1 COMPLETE", 14, Art.c("gold"), 2)
 	centered("THE NETWORK HAS RENEWED YOU FOR... ONE MORE FLOOR.", 36, Art.c("cyan"))
 	var s := GameState.stats
 	var lines := [
@@ -19,12 +19,12 @@ func _ready() -> void:
 	]
 	for i in lines.size():
 		text(lines[i], Vector2(92, 56 + i * 11), Art.c("white"))
-	centered("COMING UP NEXT: THE MASCOT", 140, Art.c("magenta"))
+	centered("NEXT SEASON: THE SHOPPING MALL AFTER HOURS", 140, Art.c("magenta"))
 	centered("PRESS JUMP TO RETURN TO THE TITLE", 158, Art.c("steel"))
 	scanlines()
 	Sfx.music("music_title")
 	Showrunner.clear()
-	Showrunner.say("What a pilot! Test audiences rated it 'technically watchable'. Stay tuned for Floor 1's grand finale!")
+	Showrunner.say("Floor one, conquered! Test audiences rated it 'technically watchable'. The mall awaits... eventually.")
 
 
 func _process(delta: float) -> void:

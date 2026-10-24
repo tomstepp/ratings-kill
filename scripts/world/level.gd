@@ -23,6 +23,7 @@ static var _tileset: TileSet
 
 var title := ""
 var rex: Rex
+var boss: Mascot
 var boom: Boom
 var hud: Hud
 var camera: Camera2D
@@ -41,6 +42,7 @@ var _deco: TileMapLayer
 var _fg: TileMapLayer
 var _shake := 0.0
 var _complete := false
+var _boss_exit := Vector2.ZERO
 
 
 func load_layout(path: String) -> void:
@@ -85,7 +87,8 @@ func _ready() -> void:
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = width * T
-	camera.limit_bottom = height * T
+	# Room below the map so the dialogue box never hides Rex near the floor.
+	camera.limit_bottom = height * T + 40
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 7.0
 	add_child(camera)
@@ -99,7 +102,7 @@ func _ready() -> void:
 	Ratings.start_level()
 	Ratings.sponsor_drop.connect(_on_sponsor_drop)
 	Ratings.boredom.connect(_on_boredom)
-	Sfx.music("music_level")
+	Sfx.music(_meta.get("music", "music_level"))
 	Showrunner.clear()
 	for line in _intro:
 		var parts := line.split("|", true, 1)
@@ -177,6 +180,9 @@ func cell(x: int, y: int) -> String:
 
 
 func _build_tiles() -> void:
+	for y in range(height, height + 3):
+		for x in width:
+			_bg.set_cell(Vector2i(x, y), 0, FILL)
 	for y in height:
 		for x in width:
 			var c := Vector2i(x, y)
@@ -228,8 +234,12 @@ func _spawn_entities() -> void:
 					rex = Rex.new()
 					rex.position = feet
 					rex.died.connect(_on_rex_died)
-				"R":
-					_add(RatDrone.new(), feet)
+				"R", "r":
+					var rat := RatDrone.new()
+					rat.fast = ch == "r"
+					_add(rat, feet)
+				"L", "H":
+					_add_mover(x, y, ch == "L")
 				"S":
 					_add(SparkBot.new(), feet)
 				"a", "b", "c":
@@ -254,6 +264,12 @@ func _spawn_entities() -> void:
 					_add(tv, center)
 				"E":
 					_add(ExitDoor.new(), feet)
+				"e":
+					_boss_exit = feet
+				"M":
+					boss = Mascot.new()
+					boss.defeated.connect(_on_boss_defeated)
+					_add(boss, feet)
 				"w":
 					_add(Lever.new(), center)
 				"$":
@@ -272,6 +288,29 @@ func _spawn_entities() -> void:
 	boom.rex = rex
 	add_child(boom)
 	rex.boom = boom
+
+
+## Lifts ('L') ride up from where they're placed until just below the ceiling;
+## sliders ('H') ride right until they meet a wall. Both are two tiles wide.
+func _add_mover(x: int, y: int, vertical: bool) -> void:
+	var m := Mover.new()
+	m.from = Vector2(x * T + T, y * T)
+	m.to = m.from
+	if vertical:
+		var r := y - 1
+		while r > 0 and _open(x, r) and _open(x + 1, r):
+			r -= 1
+		m.to.y = minf(m.from.y, (r + 3) * T)
+	else:
+		var c := x + 2
+		while c < width and _open(c, y) and _open(c, y - 1) and _open(c, y - 2):
+			c += 1
+		m.to.x = maxf(m.from.x, (c - 2) * T + T)
+	add_child(m)
+
+
+func _open(x: int, y: int) -> bool:
+	return not "#=?*xABCF-mL".contains(cell(x, y))
 
 
 func _add(node: Node2D, pos: Vector2) -> Node2D:
@@ -413,7 +452,7 @@ func _on_sponsor_drop() -> void:
 
 
 func _on_boredom() -> void:
-	if _complete or not is_instance_valid(rex) or rex.state == Rex.State.DEAD:
+	if _complete or not is_instance_valid(rex) or rex.state == Rex.State.DEAD or is_instance_valid(boss):
 		return
 	Showrunner.unlock("bored")
 	Sfx.play("boredom")
@@ -441,6 +480,18 @@ func _on_boredom() -> void:
 			light.floor_y = floor_below(p)
 			get_tree().create_timer(i * 0.35).timeout.connect(add_child.bind(light))
 			i += 1
+
+
+func _on_boss_defeated() -> void:
+	Showrunner.unlock("mascot")
+	Sfx.play("cheer")
+	var door := ExitDoor.new()
+	door.position = _boss_exit
+	door.modulate.a = 0.0
+	add_child(door)
+	create_tween().tween_property(door, "modulate:a", 1.0, 0.8)
+	burst(_boss_exit + Vector2(0, -16), Art.c("lime"), 20, 90.0)
+	Showrunner.say("...Fine. FINE. The exit is open. Floor one is yours, Halloway.", "showrunner")
 
 
 func _on_rex_died() -> void:

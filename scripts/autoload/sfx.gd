@@ -2,8 +2,9 @@ extends Node
 ## Plays the generated sound effects and music loops (tools/gen_audio.py).
 
 const SOUNDS := ["jump", "shoot", "hit", "explode", "stomp", "pickup", "powerup", "key", "hurt", "door",
-	"bonk", "blip", "crate", "stun", "switch", "achieve", "drop", "boredom", "death", "buy", "deny", "cheer"]
+	"bonk", "blip", "crate", "stun", "switch", "achieve", "drop", "boredom", "death", "buy", "deny", "cheer", "roar"]
 const POOL_SIZE := 12
+const MUSIC_DB := -8.0
 
 var streams := {}
 var _pool: Array[AudioStreamPlayer] = []
@@ -21,8 +22,19 @@ func _ready() -> void:
 		add_child(p)
 		_pool.append(p)
 	_music = AudioStreamPlayer.new()
-	_music.volume_db = -8.0
 	add_child(_music)
+	apply_music_setting.call_deferred()
+
+
+func stop_all() -> void:
+	for p in _pool + [_music]:
+		p.stop()
+		p.stream = null
+	_music_name = ""
+
+
+func apply_music_setting() -> void:
+	_music.volume_db = MUSIC_DB if GameState.music_on else -80.0
 
 
 func play(sound: String, pitch := 1.0, volume_db := 0.0) -> void:

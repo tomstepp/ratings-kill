@@ -1,6 +1,6 @@
 extends Node
 ## Developer helpers, enabled by command-line args after `--`:
-##   --capture=DIR   save a screenshot every --every=N frames (default 60), quit after --shots=N
+##   --capture=DIR   save a screenshot every --every=N physics ticks (60 per second), quit after --shots=N
 ##   --bot           hold right, hop and shoot: a crude smoke-test player
 ##   --god           Rex can't lose health
 
@@ -29,9 +29,11 @@ func _ready() -> void:
 			bot = true
 		elif arg == "--god":
 			god = true
+		elif arg == "--quit-test":
+			get_tree().create_timer(2.0).timeout.connect(GameState.quit_game)
 
 
-func _process(_delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	_frame += 1
 	if god and GameState.health < GameState.MAX_HEALTH:
 		GameState.health = GameState.MAX_HEALTH
@@ -40,7 +42,7 @@ func _process(_delta: float) -> void:
 	if capture_dir != "" and _frame % every == 0:
 		var img := get_viewport().get_texture().get_image()
 		img.save_png("%s/shot_%03d.png" % [capture_dir, _taken])
-		print("capture %d: frame %d, drawn %d, rex %s" % [_taken, _frame, Engine.get_frames_drawn(),
+		print("capture %d: frame %d, drawn %d, speaking %s, rex %s" % [_taken, _frame, Engine.get_frames_drawn(), Narrator.is_speaking(),
 			GameState.level.rex.global_position if GameState.level else "-"])
 		_images.append(img)
 		_taken += 1

@@ -1,5 +1,6 @@
 extends CanvasLayer
-## The show's system AI: dialogue pop-ups (with voice blips) and achievements.
+## The show's system AI: dialogue pop-ups (narrated, or voice blips when narration
+## is off) and achievements.
 
 const SPEAKERS := {
 	"showrunner": {"name": "THE SHOWRUNNER", "portrait": 0, "color": "magenta", "pitch": 1.25},
@@ -24,6 +25,7 @@ const ACHIEVEMENTS := {
 	"bored": {"title": "DEAD AIR", "reward": 50},
 	"untouchable": {"title": "UNTOUCHABLE", "reward": 500},
 	"window_shopper": {"title": "WINDOW SHOPPER", "reward": 25},
+	"mascot": {"title": "MASCOT MAYHEM", "reward": 1000},
 }
 
 var unlocked := {}
@@ -32,6 +34,7 @@ var _current := {}
 var _shown := 0.0
 var _hold := 0.0
 var _blip_t := 0.0
+var _speech_wait := 0.0
 var _toasts: Array = []
 
 var _panel: Control
@@ -83,7 +86,7 @@ func _build() -> void:
 	tb.size = Vector2(180, 13)
 	_toast.add_child(tb)
 	var tf := ColorRect.new()
-	tf.color = Art.c("maroon")
+	tf.color = Art.c("rust")
 	tf.position = Vector2(1, 1)
 	tf.size = Vector2(178, 11)
 	_toast.add_child(tf)
@@ -132,6 +135,7 @@ func clear() -> void:
 	_queue.clear()
 	_current = {}
 	_panel.visible = false
+	Narrator.stop()
 
 
 func is_talking() -> bool:
@@ -156,6 +160,10 @@ func _process_dialogue(delta: float) -> void:
 		_text.visible_characters = 0
 		_shown = 0.0
 		_hold = 1.2 + _current.text.length() * 0.025
+		_current.narrated = Narrator.speak(_current.text, _current.speaker)
+		if _current.narrated:
+			_hold = 0.4
+		_speech_wait = 0.0
 		_panel.visible = true
 	var total: int = _current.text.length()
 	if _shown < total:
@@ -164,14 +172,17 @@ func _process_dialogue(delta: float) -> void:
 		var n := int(_shown)
 		_text.visible_characters = n
 		_blip_t -= delta
-		if n > before and _blip_t <= 0.0 and _current.text[n - 1] != " ":
+		if not _current.narrated and n > before and _blip_t <= 0.0 and _current.text[n - 1] != " ":
 			_blip_t = 0.06
 			Sfx.play("blip", SPEAKERS[_current.speaker].pitch * randf_range(0.9, 1.15), -6.0)
 		if _shown >= total:
 			_text.visible_characters = -1
 	else:
 		_hold -= delta
-		if _hold <= 0.0:
+		_speech_wait += delta
+		# Narrated lines stay up until the voice finishes (with a safety cap).
+		var still_talking: bool = _current.narrated and Narrator.is_speaking() and _speech_wait < 15.0
+		if _hold <= 0.0 and not still_talking:
 			_current = {}
 
 
@@ -192,7 +203,14 @@ func unlock(id: String) -> void:
 	unlocked[id] = true
 	var a: Dictionary = ACHIEVEMENTS[id]
 	GameState.add_points(a.reward)
-	_toasts.append("%s  +$%d" % [a.title, a.reward])
+	_toasts.append({"text": "%s  +$%d" % [a.title, a.reward], "sound": true})
+	if _toasts.size() == 1:
+		_show_next_toast()
+
+
+## A quiet banner for settings changes ("MUSIC OFF").
+func notice(text: String) -> void:
+	_toasts.append({"text": text, "sound": false})
 	if _toasts.size() == 1:
 		_show_next_toast()
 
@@ -200,9 +218,10 @@ func unlock(id: String) -> void:
 func _show_next_toast() -> void:
 	if _toasts.is_empty():
 		return
-	_toast_label.text = "* " + _toasts[0] + " *"
+	_toast_label.text = "* " + _toasts[0].text + " *"
 	_toast.visible = true
-	Sfx.play("achieve")
+	if _toasts[0].sound:
+		Sfx.play("achieve")
 	var t := create_tween()
 	t.tween_property(_toast, "position:y", 18.0, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	t.tween_interval(2.2)

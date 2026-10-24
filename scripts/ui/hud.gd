@@ -16,6 +16,8 @@ var _live: TextureRect
 var _flash: ColorRect
 var _pause: Control
 var _pops: Array[Label] = []
+var _boss_ui: Control
+var _boss_fill: ColorRect
 var _t := 0.0
 
 
@@ -85,9 +87,26 @@ func _ready() -> void:
 	_viewers = Art.label("", Art.c("steel"))
 	_viewers.position = Vector2(246, 11)
 	add_child(_viewers)
-	var watching := Art.label("VIEWERS", Art.c("dusty"))
+	var watching := Art.label("VIEWERS", Art.c("metal"))
 	watching.position = Vector2(246, 2)
 	add_child(watching)
+
+	_boss_ui = Control.new()
+	_boss_ui.visible = false
+	add_child(_boss_ui)
+	var boss_name := Art.label("MISTER CHEDDAR, THE MASCOT", Art.c("magenta"))
+	boss_name.position = Vector2(6, 33)
+	_boss_ui.add_child(boss_name)
+	var boss_bg := ColorRect.new()
+	boss_bg.color = Art.c("black")
+	boss_bg.position = Vector2(6, 43)
+	boss_bg.size = Vector2(152, 6)
+	_boss_ui.add_child(boss_bg)
+	_boss_fill = ColorRect.new()
+	_boss_fill.color = Art.c("magenta")
+	_boss_fill.position = Vector2(7, 44)
+	_boss_fill.size = Vector2(150, 4)
+	_boss_ui.add_child(_boss_fill)
 
 	_flash = ColorRect.new()
 	_flash.color = Color(1, 1, 1, 0)
@@ -107,9 +126,9 @@ func _ready() -> void:
 	pl.position = Vector2(0, 62)
 	pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pause.add_child(pl)
-	var help := Art.label("WE'LL BE RIGHT BACK AFTER THESE MESSAGES.\n\nARROWS/WASD MOVE   SPACE/Z JUMP   X/J SHOOT\nUP/E DOORS+SWITCHES   C/L DRONE FLASH\nDOWN+JUMP DROP THROUGH GRATES   F FULLSCREEN\n\nESC: RESUME     Q: QUIT TO TITLE", Art.c("steel"))
-	help.size = Vector2(320, 70)
-	help.position = Vector2(0, 86)
+	var help := Art.label("WE'LL BE RIGHT BACK AFTER THESE MESSAGES.\n\nARROWS/WASD MOVE   SPACE/Z JUMP   X/J SHOOT\nUP/E DOORS+SWITCHES   C/L DRONE FLASH\nDOWN+JUMP DROP THROUGH GRATES   F FULLSCREEN\nM MUSIC ON/OFF   N NARRATION ON/OFF\n\nESC: RESUME     Q: QUIT TO TITLE", Art.c("steel"))
+	help.size = Vector2(320, 80)
+	help.position = Vector2(0, 82)
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pause.add_child(help)
 
@@ -149,6 +168,11 @@ func _refresh() -> void:
 	if v >= 85.0 and fmod(_t, 0.2) < 0.1:
 		_meter_fill.color = Art.c("white")
 	_viewers.text = Ratings.viewers()
+	var boss: Mascot = level.boss if level and is_instance_valid(level.boss) else null
+	_boss_ui.visible = boss != null and boss.mode != Mascot.Mode.INTRO
+	if boss:
+		_boss_fill.size.x = 150.0 * boss.health_ratio()
+		_boss_fill.color = Art.c("red") if boss.health_ratio() <= 0.5 else Art.c("magenta")
 	_live.visible = fmod(_t, 1.0) < 0.6
 
 

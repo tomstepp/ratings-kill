@@ -3,7 +3,8 @@
 
 Approximates Rex's movement on the tile grid: he is 2 tiles tall, jumps up to
 3 tiles high and about 4 tiles across, falls any distance, drops through grates,
-opens doors once he holds the matching keycard and extends bridges via levers.
+opens doors once he holds the matching keycard, extends bridges via levers and
+rides lifts (L, up from where they're placed) and sliders (H, rightward).
 Usage: python3 tools/check_levels.py [levels/*.txt]
 """
 import glob
@@ -38,6 +39,32 @@ def check(path):
 
     keys, bridges = set(), False
 
+    def blocks(x, y):
+        return ch(x, y) in "#=?*xABCF-mL"
+
+    # Moving platforms: every cell a platform passes through, grouped per platform.
+    rides, groups = {}, []
+    for y in range(h):
+        for x in range(w):
+            c = g[y][x]
+            if c not in "LH":
+                continue
+            cells = []
+            if c == "L":
+                r = y - 1
+                while r > 0 and not blocks(x, r) and not blocks(x + 1, r):
+                    r -= 1
+                for row in range(min(y, r + 3), y + 1):
+                    cells += [(x, row), (x + 1, row)]
+            else:
+                cx = x + 2
+                while cx < w and not blocks(cx, y) and not blocks(cx, y - 1) and not blocks(cx, y - 2):
+                    cx += 1
+                cells = [(col, y) for col in range(x, cx)]
+            for cell in cells:
+                rides[cell] = len(groups)
+            groups.append(cells)
+
     def solid(x, y):
         c = ch(x, y)
         if c in SOLID:
@@ -55,7 +82,8 @@ def check(path):
     def support(x, y):
         """Something to stand on below cell (x, y)."""
         c = ch(x, y + 1)
-        return solid(x, y + 1) or c == "-" or c == "x"
+        # Crates break, so they never count as a step.
+    return solid(x, y + 1) or c == "-" or (x, y + 1) in rides
 
     def open_cell(x, y):
         return not solid(x, y) and ch(x, y) != "x"
@@ -81,6 +109,10 @@ def check(path):
                     f = fall(x + dx, y)
                     if f:
                         nxt.append(f)
+            if (x, y + 1) in rides:
+                for cx, cy in groups[rides[(x, y + 1)]]:
+                    if standable(cx, cy - 1):
+                        nxt.append((cx, cy - 1))
             if ch(x, y + 1) == "-":
                 f = fall(x, y + 1)
                 if f:

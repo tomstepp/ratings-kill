@@ -117,71 +117,167 @@ def gen_sfx():
     write("buy", seq(tone(0.05, note(96), duty=0.25, vol=0.25), tone(0.05, note(100), duty=0.25, vol=0.25),
                      tone(0.2, 3000, 2000, kind="noise", vol=0.15)))
     write("deny", tone(0.18, 140, 120, duty=0.5, vol=0.3))
+    write("roar", mix(tone(0.9, 140, 70, kind="saw", vol=0.45, vib=0.08, vib_rate=11),
+                      tone(0.9, 900, 300, kind="noise", vol=0.2)))
     write("cheer", mix(tone(0.9, 2500, 1800, kind="noise", vol=0.18), tone(0.9, 1200, 900, kind="noise", vol=0.12)))
 
 
-def render_song(bpm, bars, chords, lead, bass_style="pulse", drums=True, lead_duty=0.25, swing=0.0):
-    """chords: list of root midi notes, one per bar. lead: list of (step, midi, len_steps)."""
+MINOR = [0, 2, 3, 5, 7, 8, 10]
+MAJOR = [0, 2, 4, 5, 7, 9, 11]
+
+# Two-bar rhythms for melodies: (step, length) pairs in 16th notes.
+RHYTHMS = [
+    [(0, 2), (2, 2), (4, 3), (7, 1), (8, 2), (10, 2), (12, 4), (16, 3), (19, 1), (20, 2), (22, 2), (24, 6), (30, 2)],
+    [(0, 1), (1, 1), (2, 2), (4, 4), (8, 2), (10, 1), (11, 1), (12, 4), (16, 2), (18, 2), (20, 4), (24, 8)],
+    [(0, 3), (3, 3), (6, 2), (8, 4), (12, 2), (14, 2), (16, 3), (19, 3), (22, 2), (24, 4), (28, 4)],
+    [(0, 2), (4, 2), (6, 2), (8, 2), (10, 4), (16, 2), (18, 2), (20, 2), (22, 2), (24, 4), (28, 2), (30, 2)],
+]
+
+
+def degree_note(key, scale, degree, octave=0):
+    """Scale degree (can be negative or > 6) -> midi note."""
+    o, d = divmod(degree, len(scale))
+    return key + scale[d] + 12 * (o + octave)
+
+
+def make_motif(seed, rhythm):
+    """A two-bar melodic shape: scale-degree offsets from the chord root, one per note."""
+    r = random.Random(seed)
+    degs, cur = [], r.choice([0, 2, 4])
+    for i, _ in enumerate(rhythm):
+        degs.append(cur)
+        step = r.choice([-2, -1, -1, 1, 1, 2, 2, 3, -3, 0])
+        cur = max(-2, min(9, cur + step))
+    degs[-1] = r.choice([0, 2, 4, 7])  # land on a chord tone
+    return degs
+
+
+def compose(name, bpm, key, scale, sections, lead_duty=0.25, seed=1):
+    """sections: list of dicts with bars, chords (scale degrees, one per bar), and
+    lead ('a', 'b', 'a_high', None), drums ('full', 'half', 'none'), arp, bass ('pulse', 'walk', None)."""
     step = 60.0 / bpm / 4
-    total = int(bars * 16 * step * RATE)
+    total_bars = sum(sec["bars"] for sec in sections)
+    total = int(total_bars * 16 * step * RATE) + RATE
     out = [0.0] * total
 
-    def add(start_s, samples):
-        i0 = int(start_s * RATE)
+    def add(t, samples):
+        i0 = int(t * RATE)
         for i, v in enumerate(samples):
             if i0 + i < total:
                 out[i0 + i] += v
 
-    for bar, root in enumerate(chords[:bars]):
-        for s in range(16):
-            t = (bar * 16 + s) * step + (swing * step if s % 2 else 0)
-            if bass_style == "pulse":
-                n = root if s % 4 != 2 else root + 12
-                if s % 2 == 0:
-                    add(t, tone(step * 1.6, note(n), kind="tri", vol=0.45, attack=0.002))
-            else:
-                if s in (0, 6, 10):
-                    add(t, tone(step * 3, note(root), kind="tri", vol=0.45))
-            if drums:
-                if s in (0, 8) or (s == 11 and bar % 2):
-                    add(t, tone(0.12, 160, 40, kind="sine", vol=0.55, attack=0.001))
-                if s in (4, 12):
-                    add(t, tone(0.1, 3000, 1500, kind="noise", vol=0.22, attack=0.001))
-                if s % 2 == 0:
-                    add(t, tone(0.03, 8000, kind="noise", vol=0.07, attack=0.001))
-    for st, n, ln in lead:
-        if n is None:
-            continue
-        add(st * step, tone(step * ln * 0.95, note(n), duty=lead_duty, vol=0.2, attack=0.004, vib=0.006, vib_rate=6))
-    return out
+    motifs = {}
+    for tag, offset in (("a", 0), ("b", 1)):
+        rh = RHYTHMS[(seed + offset * 3) % len(RHYTHMS)]
+        motifs[tag] = (rh, make_motif(seed * 31 + offset, rh))
+
+    bar0 = 0
+    for sec in sections:
+        chords = sec["chords"]
+        for b in range(sec["bars"]):
+            bar = bar0 + b
+            root_deg = chords[b % len(chords)]
+            last_bar = b == sec["bars"] - 1
+            # Bass
+            for s16 in range(16):
+                t = (bar * 16 + s16) * step
+                if sec.get("bass") == "pulse" and s16 % 2 == 0:
+                    n = degree_note(key, scale, root_deg, -2) + (12 if s16 % 8 == 6 else 0)
+                    add(t, tone(step * 1.7, note(n), kind="tri", vol=0.42, attack=0.002))
+                elif sec.get("bass") == "walk" and s16 % 4 == 0:
+                    n = degree_note(key, scale, root_deg + [0, 2, 4, 2][s16 // 4], -2)
+                    add(t, tone(step * 3.5, note(n), kind="tri", vol=0.42))
+            # Arpeggio: chord tones in 16ths, quiet
+            if sec.get("arp"):
+                for s16 in range(16):
+                    t = (bar * 16 + s16) * step
+                    n = degree_note(key, scale, root_deg + [0, 2, 4, 7][s16 % 4], 0)
+                    add(t, tone(step * 0.9, note(n), duty=0.125, vol=0.07, attack=0.001))
+            # Drums
+            style = sec.get("drums", "full")
+            for s16 in range(16):
+                t = (bar * 16 + s16) * step
+                fill = last_bar and s16 >= 12 and style != "none"
+                if style == "full":
+                    if s16 in (0, 8) or (s16 == 10 and bar % 2):
+                        add(t, tone(0.12, 160, 40, kind="sine", vol=0.55, attack=0.001))
+                    if s16 in (4, 12) or fill:
+                        add(t, tone(0.1, 3000, 1500, kind="noise", vol=0.2 + (0.05 if fill else 0), attack=0.001))
+                    if s16 % 2 == 0:
+                        add(t, tone(0.03, 8000, kind="noise", vol=0.07, attack=0.001))
+                elif style == "half":
+                    if s16 == 0:
+                        add(t, tone(0.12, 160, 40, kind="sine", vol=0.5, attack=0.001))
+                    if s16 == 8 or fill:
+                        add(t, tone(0.1, 3000, 1500, kind="noise", vol=0.18, attack=0.001))
+                    if s16 % 4 == 2:
+                        add(t, tone(0.03, 8000, kind="noise", vol=0.06, attack=0.001))
+            # Lead melody: motif repeated over each pair of bars, following the chords
+            lead = sec.get("lead")
+            if lead and b % 2 == 0:
+                tag = lead[0]
+                octave = 1 if lead.endswith("high") else 0
+                rh, degs = motifs[tag]
+                # Every other phrase answers with a varied ending.
+                vary = (b // 2) % 2 == 1
+                for i, (st, ln) in enumerate(rh):
+                    d = degs[i]
+                    if vary and i >= len(rh) - 3:
+                        d = degs[i] - 2
+                    chord_here = chords[(b + st // 16) % len(chords)]
+                    n = degree_note(key, scale, chord_here + d, octave)
+                    add((bar * 16 + st) * step, tone(step * ln * 0.92, note(n), duty=lead_duty, vol=0.19, attack=0.004, vib=0.006, vib_rate=6))
+                    if octave:
+                        # Harmony a third below on the high variation.
+                        n2 = degree_note(key, scale, chord_here + d - 2, octave)
+                        add((bar * 16 + st) * step, tone(step * ln * 0.92, note(n2), duty=0.5, vol=0.08, attack=0.004))
+        bar0 += sec["bars"]
+    # Trim the spare second we allocated.
+    write(name, out[: int(total_bars * 16 * step * RATE)])
 
 
 def gen_music():
-    # Level theme: driving A minor loop (Am F G E), two 4-bar phrases.
-    chords = [45, 41, 43, 40, 45, 41, 43, 40]
-    m = []
-    phrase_a = [(0, 69, 2), (2, 72, 2), (4, 76, 3), (7, 74, 1), (8, 72, 2), (10, 71, 2), (12, 69, 4),
-                (16, 65, 2), (18, 69, 2), (20, 72, 3), (23, 71, 1), (24, 69, 2), (26, 67, 2), (28, 65, 4),
-                (32, 67, 2), (34, 71, 2), (36, 74, 3), (39, 72, 1), (40, 71, 2), (42, 74, 2), (44, 79, 4),
-                (48, 76, 3), (51, 75, 1), (52, 76, 2), (54, 80, 2), (56, 83, 6), (62, 80, 2)]
-    m += phrase_a
-    phrase_b = [(64 + s, n + (12 if i % 5 == 4 else 0), l) for i, (s, n, l) in enumerate(phrase_a[:20])]
-    phrase_b += [(112, 76, 2), (114, 74, 2), (116, 72, 2), (118, 71, 2), (120, 69, 8)]
-    m += phrase_b
-    write("music_level", render_song(140, 8, chords, m))
+    # Level 1, Platform Zero: driving A minor, ~60s before it repeats.
+    i, iv, v, VI, VII = 0, 3, 4, 5, 6
+    compose("music_level", 140, 57, MINOR, [
+        {"bars": 4, "chords": [i, i, VI, VII], "drums": "half", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, VI, VII, v], "drums": "full", "bass": "pulse", "lead": "a"},
+        {"bars": 8, "chords": [iv, i, VI, VII], "drums": "full", "bass": "pulse", "lead": "b", "arp": True},
+        {"bars": 4, "chords": [i, i, VI, VII], "drums": "half", "bass": "walk", "arp": True},
+        {"bars": 8, "chords": [i, VI, VII, v], "drums": "full", "bass": "pulse", "lead": "a_high"},
+        {"bars": 4, "chords": [VI, VII, i, i], "drums": "full", "bass": "pulse", "lead": "b"},
+    ], seed=3)
 
-    # Break room: lazy lounge loop (Cmaj7 Am7 Dm7 G7 feel), swung, no kick spam.
-    chords = [48, 45, 50, 43]
-    lead = [(0, 76, 3), (4, 79, 2), (6, 76, 2), (8, 74, 6), (16, 72, 3), (20, 76, 2), (22, 72, 2), (24, 69, 6),
-            (32, 74, 3), (36, 77, 2), (38, 74, 2), (40, 72, 6), (48, 71, 3), (52, 74, 2), (54, 77, 2), (56, 79, 6)]
-    write("music_break", render_song(96, 4, chords, lead, bass_style="walk", drums=False, lead_duty=0.5, swing=0.3))
+    # Level 2, Rush Hour Ruins: faster D minor with a different hook.
+    compose("music_level2", 152, 50, MINOR, [
+        {"bars": 4, "chords": [i, VII, VI, VII], "drums": "full", "bass": "pulse"},
+        {"bars": 8, "chords": [i, VII, VI, VII], "drums": "full", "bass": "pulse", "lead": "a", "arp": True},
+        {"bars": 8, "chords": [iv, v, i, i], "drums": "full", "bass": "walk", "lead": "b"},
+        {"bars": 4, "chords": [VI, VI, VII, VII], "drums": "half", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, VII, VI, VII], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+        {"bars": 4, "chords": [iv, v, i, i], "drums": "full", "bass": "pulse", "lead": "b"},
+    ], lead_duty=0.5, seed=8)
 
-    # Title sting: big fanfare loop.
-    chords = [45, 45, 41, 43]
-    lead = [(0, 69, 1), (1, 69, 1), (2, 69, 1), (3, 72, 5), (8, 76, 4), (12, 74, 4),
-            (16, 72, 1), (17, 72, 1), (18, 72, 1), (19, 76, 5), (24, 81, 8),
-            (32, 77, 4), (36, 76, 4), (40, 74, 4), (44, 72, 4), (48, 74, 4), (52, 76, 4), (56, 79, 8)]
-    write("music_title", render_song(120, 4, chords, lead))
+    # Break room: lazy major-key lounge, no drums, ~40s.
+    I, ii, IV, V, vi = 0, 1, 3, 4, 5
+    compose("music_break", 96, 60, MAJOR, [
+        {"bars": 8, "chords": [I, vi, ii, V], "drums": "none", "bass": "walk", "lead": "a"},
+        {"bars": 8, "chords": [IV, I, ii, V], "drums": "none", "bass": "walk", "lead": "b", "arp": True},
+    ], lead_duty=0.5, seed=5)
+
+    # Boss: Mister Cheddar's theme. Fast, relentless, a bit silly.
+    compose("music_boss", 168, 52, MINOR, [
+        {"bars": 4, "chords": [i, i, VI, v], "drums": "full", "bass": "pulse", "arp": True},
+        {"bars": 8, "chords": [i, VI, iv, v], "drums": "full", "bass": "pulse", "lead": "a", "arp": True},
+        {"bars": 8, "chords": [VI, VII, i, i], "drums": "full", "bass": "walk", "lead": "b"},
+        {"bars": 8, "chords": [i, VI, iv, v], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+    ], lead_duty=0.25, seed=21)
+
+    # Title: big fanfare loop.
+    compose("music_title", 120, 57, MINOR, [
+        {"bars": 4, "chords": [i, i, VI, VII], "drums": "full", "bass": "pulse", "lead": "a"},
+        {"bars": 4, "chords": [i, i, VI, VII], "drums": "full", "bass": "pulse", "lead": "a_high", "arp": True},
+    ], seed=11)
 
 
 if __name__ == "__main__":

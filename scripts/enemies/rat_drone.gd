@@ -2,16 +2,19 @@ class_name RatDrone
 extends Enemy
 ## Floor 1 grunt: patrols, turns at walls and ledges. Stomp or shoot it.
 
-const SPEED := 38.0
 const GRAVITY := 900.0
 
+var speed := 38.0
+var fast := false  # the 'r' variant: quicker, tougher, angrier
 var dir := -1
 var _ledge: RayCast2D
 
 
 func _build() -> void:
-	hp = 1
-	points = 100
+	hp = 2 if fast else 1
+	points = 150 if fast else 100
+	if fast:
+		speed = 64.0
 	top_offset = 9.0
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -27,6 +30,11 @@ func _build() -> void:
 	})
 	sprite.position = Vector2(0, -5)
 	sprite.play("walk")
+	if fast:
+		tint = Color(1.35, 0.8, 0.8)
+		anim_speed = 1.6
+		sprite.modulate = tint
+		sprite.speed_scale = anim_speed
 	add_child(sprite)
 	_ledge = RayCast2D.new()
 	_ledge.collision_mask = 1 | 16
@@ -39,7 +47,7 @@ func _behave(delta: float) -> void:
 	if stunned > 0.0:
 		velocity.x = 0.0
 	else:
-		velocity.x = dir * SPEED
+		velocity.x = dir * speed
 	_ledge.position = Vector2(dir * 8, -2)
 	move_and_slide()
 	if stunned <= 0.0 and is_on_floor():

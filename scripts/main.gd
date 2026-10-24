@@ -31,6 +31,11 @@ func _ready() -> void:
 	show_title()
 
 
+func _exit_tree() -> void:
+	# Release the shared tileset so Godot doesn't report it as leaked at quit.
+	Level._tileset = null
+
+
 func _swap(node: Node) -> void:
 	get_tree().paused = false
 	if _current:

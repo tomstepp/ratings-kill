@@ -7,6 +7,7 @@ Rex is 2 tiles tall, jumps about 3 tiles high and 4 tiles across.
 
 ```
 name: Platform Zero            # shown in the break room and the wrap-up line
+music: music_level2            # optional; a track in assets/audio (default music_level)
 intro: showrunner|Hello!       # dialogue at level start (speaker: showrunner, boom or rex)
 hint: boom|Psst.               # one per T in the map, in reading order (left-to-right, top-to-bottom)
 ; comment lines start with a semicolon
@@ -24,6 +25,11 @@ hint: boom|Psst.               # one per T in the map, in reading order (left-to
 | `z` | Electrified rail (put it on top of a floor; cycles on and off) |
 | `P` | Rex's start (exactly one) |
 | `R` | Rat drone (patrols, stomp or shoot) |
+| `r` | Fast red rat (quicker, 2 hits) |
+| `L` | Lift, 2 tiles wide (rides up from here to just below the ceiling, then back) |
+| `H` | Slider, 2 tiles wide (rides right from here until a wall, then back) |
+| `M` | The Mascot (Floor 1 boss) |
+| `e` | Where the exit appears once the boss is beaten |
 | `S` | Spark bot (turret, 3 hits, don't stomp unless stunned) |
 | `a` `b` `c` | Red, blue, yellow keycard |
 | `A` `B` `C` | Red, blue, yellow door (bottom tile; leave the tile above empty) |

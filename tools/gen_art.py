@@ -17,16 +17,16 @@ FONTS = os.path.join(ROOT, "assets", "fonts")
 # The one palette. Index -> RGB. Keep in sync with scripts/autoload/art.gd.
 PALETTE = [
     (0x0B, 0x0B, 0x14),  # 0 K black / outline
-    (0x22, 0x20, 0x3B),  # 1 N deep navy
-    (0x3C, 0x3A, 0x63),  # 2 S slate
-    (0x6C, 0x6F, 0x9E),  # 3 P dusty blue
+    (0x14, 0x1B, 0x33),  # 1 N navy (backdrop)
+    (0x26, 0x32, 0x58),  # 2 S midnight blue (backdrop mortar, dark metal)
+    (0x5A, 0x64, 0x88),  # 3 P metal blue-grey
     (0xB3, 0xBB, 0xD9),  # 4 L pale steel
-    (0xF4, 0xF1, 0xE8),  # 5 W off-white
+    (0xF6, 0xF1, 0xE7),  # 5 W off-white
     (0xF2, 0xC1, 0x4E),  # 6 Y gold
-    (0xE0, 0x7A, 0x32),  # 7 O orange
-    (0xB8, 0x32, 0x40),  # 8 R red
-    (0x5E, 0x1F, 0x3A),  # 9 M maroon
-    (0x2F, 0x7A, 0x4A),  # 10 G green
+    (0xD9, 0x8A, 0x4A),  # 7 O terracotta (floor highlights)
+    (0xE0, 0x47, 0x3F),  # 8 R red
+    (0x8A, 0x4B, 0x2F),  # 9 M rust (floors and walls)
+    (0x3F, 0x7D, 0x6A),  # 10 G pine green
     (0x8F, 0xD1, 0x4F),  # 11 g lime
     (0x2C, 0x6E, 0x85),  # 12 T teal
     (0x66, 0xD6, 0xE8),  # 13 C cyan
@@ -77,6 +77,12 @@ class Canvas:
         for x, y in add:
             self.px[y][x] = c
         return self
+
+    def ellipse(self, cx, cy, rx, ry, c):
+        for y in range(int(cy - ry), int(cy + ry) + 1):
+            for x in range(int(cx - rx), int(cx + rx) + 1):
+                if ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1.0:
+                    self.put(x, y, c)
 
     def blit(self, other, ox, oy):
         for y in range(other.h):
@@ -423,18 +429,18 @@ def gen_pickups():
 
 def gen_objects():
     crate = Canvas(16, 16)
-    crate.rect(0, 0, 16, 16, CH["O"])
+    crate.rect(0, 0, 16, 16, CH["Y"])
     crate.rect(0, 0, 16, 1, CH["K"])
     crate.rect(0, 15, 16, 1, CH["K"])
     crate.rect(0, 0, 1, 16, CH["K"])
     crate.rect(15, 0, 1, 16, CH["K"])
-    crate.rect(1, 1, 14, 2, CH["M"])
-    crate.rect(1, 13, 14, 2, CH["M"])
+    crate.rect(1, 1, 14, 2, CH["O"])
+    crate.rect(1, 13, 14, 2, CH["O"])
     for i in range(1, 15):
-        crate.put(i, i, CH["M"])
-        crate.put(i, 15 - i, CH["M"])
-    crate.put(2, 4, CH["Y"])
-    crate.put(3, 5, CH["Y"])
+        crate.put(i, i, CH["O"])
+        crate.put(i, 15 - i, CH["O"])
+    crate.put(2, 4, CH["W"])
+    crate.put(3, 5, CH["W"])
     save(crate, os.path.join(SPRITES, "crate.png"))
 
     def tv_block(active):
@@ -540,6 +546,17 @@ def gen_objects():
     ], outline=False)
     save(chute, os.path.join(SPRITES, "chute.png"))
 
+    # Moving platform, 32x8: steel deck with hazard stripes and running lights.
+    lift = Canvas(32, 8)
+    lift.rect(0, 0, 32, 8, CH["K"])
+    lift.rect(1, 1, 30, 2, CH["L"])
+    lift.rect(1, 3, 30, 3, CH["P"])
+    for x in range(1, 31, 4):
+        lift.rect(x, 3, 2, 3, CH["Y"])
+    lift.rect(2, 6, 2, 1, CH["C"])
+    lift.rect(28, 6, 2, 1, CH["C"])
+    save(lift, os.path.join(SPRITES, "lift.png"))
+
     light = sprite(16, 16, [
         "",
         ".......SS.......",
@@ -553,6 +570,76 @@ def gen_objects():
         "....YYYYYYYY....",
     ])
     save(light, os.path.join(SPRITES, "stage_light.png"))
+
+
+# ---------------------------------------------------- The Mascot (boss, 48x48)
+
+def mascot_frame(pose):
+    """Floor 1 boss: a giant foam rat costume with a cheese-wedge hat."""
+    c = Canvas(48, 48)
+    V, W, K, F, Y, O, R = CH["V"], CH["W"], CH["K"], CH["F"], CH["Y"], CH["O"], CH["R"]
+    body_y = {"idle2": 31, "crouch": 33, "jump": 28}.get(pose, 30)
+    head_y = body_y - 16 + (2 if pose == "crouch" else 0)
+    # Feet
+    if pose == "jump":
+        c.ellipse(17, 41, 5, 3, R); c.ellipse(31, 41, 5, 3, R)
+    elif pose == "walk1":
+        c.ellipse(14, 44, 6, 3, R); c.ellipse(32, 45, 6, 3, R)
+    elif pose == "walk2":
+        c.ellipse(16, 45, 6, 3, R); c.ellipse(34, 44, 6, 3, R)
+    else:
+        c.ellipse(15, 45, 6, 3, R); c.ellipse(33, 45, 6, 3, R)
+    # Tail
+    for i in range(8):
+        c.put(36 + i, body_y + 6 - (i * i) // 10, F)
+    # Body and belly with the network star
+    c.ellipse(24, body_y, 13, 12, V)
+    c.ellipse(24, body_y + 2, 8, 8, W)
+    c.ascii(["..Y..", ".YYY.", "YYYYY", ".Y.Y."], 22, body_y)
+    # Arms and gloves
+    if pose in ("jump", "crouch"):
+        c.ellipse(8, body_y - 10, 4, 4, W); c.ellipse(40, body_y - 10, 4, 4, W)
+        c.rect(10, body_y - 8, 3, 6, V); c.rect(35, body_y - 8, 3, 6, V)
+    elif pose == "throw":
+        c.ellipse(9, body_y + 1, 4, 4, W)
+        c.ellipse(40, body_y - 14, 4, 4, W); c.rect(36, body_y - 12, 3, 8, V)
+    else:
+        c.ellipse(9, body_y + 1, 4, 4, W); c.ellipse(39, body_y + 1, 4, 4, W)
+    # Head, ears, cheese hat
+    c.ellipse(11, head_y - 7, 5, 5, V); c.ellipse(11, head_y - 7, 3, 3, F)
+    c.ellipse(37, head_y - 7, 5, 5, V); c.ellipse(37, head_y - 7, 3, 3, F)
+    c.ellipse(24, head_y, 12, 10, V)
+    c.ascii(["....Y", "..YYY", "YYOYY", "YYYYY"], 21, head_y - 13)
+    # Face
+    if pose == "hurt":
+        c.ascii(["K.K", ".K.", "K.K"], 17, head_y - 3)
+        c.ascii(["K.K", ".K.", "K.K"], 28, head_y - 3)
+        c.ellipse(24, head_y + 6, 3, 2, K)
+    else:
+        c.ellipse(19, head_y - 2, 3, 4, W); c.ellipse(29, head_y - 2, 3, 4, W)
+        c.rect(20, head_y - 2, 2, 3, K); c.rect(30, head_y - 2, 2, 3, K)
+        c.ellipse(24, head_y + 3, 2, 1, R)
+        c.rect(16, head_y + 5, 17, 1, K)
+        c.rect(17, head_y + 6, 15, 2, K)
+        c.rect(19, head_y + 6, 11, 1, W)
+        if pose in ("crouch", "throw"):
+            # Angry brows
+            c.ascii(["KK....", "..KK.."], 15, head_y - 7)
+            c.ascii(["..KK", "KK.."], 28, head_y - 7)
+    return c.outline()
+
+
+def gen_mascot():
+    poses = ["idle", "idle2", "walk1", "walk2", "crouch", "jump", "hurt", "throw"]
+    save(strip([mascot_frame(p) for p in poses]), os.path.join(SPRITES, "mascot.png"))
+    wave_a = sprite(16, 12, ["", "", "", "......WW........", ".....WCCW.......", "....WCCCCW......",
+                             "...WCCCCCCW.....", "..WCCCCCCCCW....", ".WCCCCCCCCCCW...", "WCCCCCCCCCCCCW.."])
+    wave_b = sprite(16, 12, ["", "", "", "", ".......WW.......", "......WCCW......",
+                             ".....WCCCCW.....", "...WWCCCCCCWW...", ".WCCCCCCCCCCCCW.", "WCCCCCCCCCCCCCCW"])
+    save(strip([wave_a, wave_b]), os.path.join(SPRITES, "shockwave.png"))
+    bomb = sprite(12, 12, ["", "....LL......", "...YVVY.....", "..VVYVVV....", "..VYYYYV....",
+                           "..VVYVVV....", "...VVVV....."], ox=1)
+    save(bomb, os.path.join(SPRITES, "bomb.png"))
 
 
 # ----------------------------------------------------------------- Portraits
@@ -640,37 +727,37 @@ def gen_tiles():
 
     def brick(fake=False):
         t = Canvas(16, 16)
-        t.rect(0, 0, 16, 16, CH["S"])
+        t.rect(0, 0, 16, 16, CH["M"])
         for y in (0, 8):
-            t.rect(0, y, 16, 1, CH["N"])
+            t.rect(0, y, 16, 1, CH["K"])
         for x in (0, 8):
-            t.rect(x, 1, 1, 7, CH["N"])
+            t.rect(x, 1, 1, 7, CH["K"])
         for x in (4, 12):
-            t.rect(x, 9, 1, 7, CH["N"])
+            t.rect(x, 9, 1, 7, CH["K"])
         for (x, y) in ((1, 1), (9, 1), (5, 9), (13, 9)):
-            t.put(x, y, CH["P"])
-            t.put(x + 1, y, CH["P"])
+            t.put(x, y, CH["O"])
+            t.put(x + 1, y, CH["O"])
         if fake:
-            t.put(10, 4, CH["N"])
-            t.put(11, 5, CH["N"])
+            t.put(10, 4, CH["K"])
+            t.put(11, 5, CH["K"])
         return t
 
     floor_top = Canvas(16, 16)
-    floor_top.rect(0, 0, 16, 16, CH["P"])
-    floor_top.rect(0, 0, 16, 1, CH["L"])
+    floor_top.rect(0, 0, 16, 16, CH["M"])
+    floor_top.rect(0, 0, 16, 1, CH["O"])
     floor_top.rect(0, 1, 16, 2, CH["Y"])
     for x in range(0, 16, 6):
         floor_top.rect(x, 1, 3, 2, CH["K"])
-    floor_top.rect(0, 3, 16, 1, CH["S"])
+    floor_top.rect(0, 3, 16, 1, CH["K"])
     for (x, y) in ((3, 7), (11, 9), (6, 12), (14, 13), (1, 11)):
-        floor_top.put(x, y, CH["S"])
+        floor_top.put(x, y, CH["O"])
 
     fill = Canvas(16, 16)
-    fill.rect(0, 0, 16, 16, CH["S"])
+    fill.rect(0, 0, 16, 16, CH["M"])
     for (x, y) in ((2, 3), (9, 1), (13, 6), (5, 9), (11, 12), (1, 14), (7, 14)):
-        fill.put(x, y, CH["P"])
+        fill.put(x, y, CH["O"])
     for (x, y) in ((4, 5), (12, 2), (8, 10), (14, 14)):
-        fill.put(x, y, CH["N"])
+        fill.put(x, y, CH["K"])
 
     grate = Canvas(16, 16)
     grate.rect(0, 0, 16, 1, CH["L"])
@@ -693,9 +780,9 @@ def gen_tiles():
     bg = Canvas(16, 16)
     bg.rect(0, 0, 16, 16, CH["N"])
     for y in (0, 8):
-        bg.rect(0, y, 16, 1, CH["K"])
+        bg.rect(0, y, 16, 1, CH["S"])
     for x in (0, 8):
-        bg.rect(x, 0, 1, 16, CH["K"])
+        bg.rect(x, 0, 1, 16, CH["S"])
 
     bg_band = Canvas(16, 16)
     bg_band.blit(bg, 0, 0)
@@ -712,7 +799,7 @@ def gen_tiles():
     poster = Canvas(16, 16)
     poster.blit(bg, 0, 0)
     poster.rect(2, 1, 12, 14, CH["K"])
-    poster.rect(3, 2, 10, 12, CH["M"])
+    poster.rect(3, 2, 10, 12, CH["S"])
     poster.ascii([
         "PP.P.P",
         "P.PPP.",
@@ -804,6 +891,7 @@ if __name__ == "__main__":
     gen_pickups()
     gen_objects()
     gen_portraits()
+    gen_mascot()
     gen_ui()
     gen_tiles()
     gen_font()

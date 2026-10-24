@@ -28,8 +28,8 @@ func shot(_damage: int, _from: Node) -> void:
 	GameState.stat("crates")
 	Ratings.add(2, "SMASH")
 	var level = GameState.level
-	level.burst(global_position, Art.c("orange"), 12, 80.0)
-	level.burst(global_position, Art.c("maroon"), 6, 60.0)
+	level.burst(global_position, Art.c("gold"), 12, 80.0)
+	level.burst(global_position, Art.c("terracotta"), 6, 60.0)
 	var item := contents
 	if item == "":
 		var r := randf()

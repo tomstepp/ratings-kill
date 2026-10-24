@@ -10,7 +10,8 @@ var rex: Rex
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	get_tree().create_timer(180.0).timeout.connect(func():
+	GameState.save_path = "user://playtest_save.cfg"
+	get_tree().create_timer(300.0).timeout.connect(func():
 		print("PLAYTEST TIMED OUT")
 		get_tree().quit(2))
 	_run.call_deferred()
@@ -21,6 +22,7 @@ func _run() -> void:
 	await _combat_checks()
 	await _world_checks()
 	await _show_checks()
+	await _phase4_checks()
 	print("PLAYTEST %s (%d failed)" % ["OK" if _fails == 0 else "FAILED", _fails])
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -355,3 +357,103 @@ func _show_checks() -> void:
 		if n is BreakRoom:
 			in_break = true
 	check("exit leads to break room", in_break)
+
+
+# ------------------------------------------------------------------ phase 4
+
+func open_level(i: int) -> void:
+	GameState.new_game()
+	await frames(2)
+	GameState.start_level(i)
+	await frames(3)
+	level = GameState.level
+	rex = level.rex
+	Showrunner.clear()
+
+
+func _phase4_checks() -> void:
+	# Lift in level 3 (index 2) carries Rex up.
+	await open_level(2)
+	var lift: Mover
+	for n in level.get_children():
+		if n is Mover and n.from.x == n.to.x:
+			lift = n
+	rex.global_position = lift.global_position + Vector2(0, -1)
+	rex.velocity = Vector2.ZERO
+	var y0 := rex.global_position.y
+	await frames(240)
+	check("lift carries Rex up", rex.global_position.y < y0 - 64.0, "(%.0f -> %.0f)" % [y0, rex.global_position.y])
+
+	# Slider in level 4 (index 3) carries Rex sideways over the rails.
+	await open_level(3)
+	var slider: Mover
+	for n in level.get_children():
+		if n is Mover and n.from.y == n.to.y:
+			slider = n
+			break
+	GameState.health = 8
+	rex.global_position = slider.global_position + Vector2(0, -1)
+	rex.velocity = Vector2.ZERO
+	var x0 := rex.global_position.x
+	await frames(240)
+	check("slider carries Rex across", rex.global_position.x > x0 + 64.0 and GameState.health == 8,
+		"(%.0f -> %.0f, hp %d)" % [x0, rex.global_position.x, GameState.health])
+
+	# Fast rats take two hits.
+	var rat := RatDrone.new()
+	rat.fast = true
+	rat.position = Vector2(-1000, -1000)
+	level.add_child(rat)
+	await frames(2)
+	rat.shot(1, null)
+	var survived := not rat.dead
+	rat.shot(1, null)
+	check("fast rat takes two hits", survived and rat.dead)
+
+	# Boss: intro holds, damage works, defeat opens the exit, exit ends the floor.
+	await open_level(GameState.LEVELS.size() - 1)
+	var boss: Mascot = level.boss
+	check("boss level spawns the Mascot", boss != null)
+	await frames(30)
+	check("boss waits during intro", boss.mode == Mascot.Mode.INTRO)
+	Showrunner.clear()
+	await frames(120)
+	check("boss starts fighting after intro", boss.mode != Mascot.Mode.INTRO)
+	var hp0 := boss.hp
+	boss.shot(1, null)
+	check("boss takes damage", boss.hp == hp0 - 1)
+	boss.shot(boss.hp, null)
+	await frames(200)
+	var exit: ExitDoor
+	for n in level.get_children():
+		if n is ExitDoor:
+			exit = n
+	check("defeating the boss opens the exit", exit != null and Showrunner.unlocked.has("mascot"))
+	rex.global_position = exit.global_position
+	await frames(4)
+	Input.action_press("interact")
+	await frames(2)
+	Input.action_release("interact")
+	await frames(240)
+	var at_end := false
+	for n in GameState.main.get_children():
+		if n is EndCard:
+			at_end = true
+	check("boss exit ends the floor", at_end)
+	check("finishing the floor clears the save", not GameState.has_save())
+
+	# Save and continue: finish level 1, then continue into the break room before level 2.
+	await open_level(0)
+	level.complete()
+	await frames(200)
+	check("completing a level saves", GameState.saved_level() == 1)
+	var pts := GameState.points
+	GameState.points = 0
+	check("continue restores the run", GameState.continue_game() and GameState.points == pts)
+	await frames(5)
+	var in_break := false
+	for n in GameState.main.get_children():
+		if n is BreakRoom:
+			in_break = true
+	check("continue opens the break room", in_break and GameState.level_index == 0)
+	GameState.clear_save()

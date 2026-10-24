@@ -11,6 +11,11 @@ const MAX_FIREPOWER := 4
 const LEVELS := [
 	"res://levels/f1_l1.txt",
 	"res://levels/f1_l2.txt",
+	"res://levels/f1_l3.txt",
+	"res://levels/f1_l4.txt",
+	"res://levels/f1_l5.txt",
+	"res://levels/f1_l6.txt",
+	"res://levels/f1_boss.txt",
 ]
 
 var main: Node  # scenes/main.gd registers itself here
@@ -25,6 +30,8 @@ var level_index := 0
 var upgrades := {"battery": 0, "hype": 0}
 var stats := {"wall_bumps": 0, "jumps": 0, "shots": 0, "crates": 0, "sodas": 0, "deaths": 0, "kills": 0, "stomps": 0, "secrets": 0}
 var damage_this_level := 0
+var music_on := true
+var narration_on := true
 
 var _snapshot := {}
 
@@ -32,9 +39,37 @@ var _snapshot := {}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_input()
+	_load_settings()
+	get_tree().auto_accept_quit = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		quit_game()
+
+
+## Quit cleanly: silence audio and give the audio server a moment to let go of
+## its playbacks, otherwise Godot reports them as leaked on exit.
+func quit_game() -> void:
+	Narrator.stop()
+	Sfx.stop_all()
+	await get_tree().process_frame
+	await get_tree().create_timer(0.1).timeout
+	get_tree().quit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_music"):
+		music_on = not music_on
+		Sfx.apply_music_setting()
+		Showrunner.notice("MUSIC ON" if music_on else "MUSIC OFF")
+		_save_settings()
+	elif event.is_action_pressed("toggle_narration"):
+		narration_on = not narration_on
+		if not narration_on:
+			Narrator.stop()
+		Showrunner.notice("NARRATION ON" if narration_on else "NARRATION OFF")
+		_save_settings()
 	if event.is_action_pressed("fullscreen"):
 		var mode := DisplayServer.window_get_mode()
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if mode == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
@@ -53,6 +88,7 @@ func new_game() -> void:
 	for k in stats:
 		stats[k] = 0
 	Showrunner.reset_achievements()
+	Ratings.drops = 0
 	start_level(0)
 
 
@@ -74,8 +110,10 @@ func restart_level() -> void:
 
 func level_complete() -> void:
 	if level_index + 1 < LEVELS.size():
+		save_progress()
 		main.show_break_room()
 	else:
+		clear_save()
 		main.show_end()
 
 
@@ -129,6 +167,85 @@ func stat(name: String, amount := 1) -> void:
 	Showrunner.check_stat(name, stats[name])
 
 
+# ------------------------------------------------------------------ saving
+
+const SAVE_PATH := "user://save.cfg"
+
+var save_path := SAVE_PATH  # the automated playtest points this elsewhere
+
+
+## Saved after each level, so Continue drops you in the break room before the next one.
+func save_progress() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("run", "next_level", level_index + 1)
+	for key in ["health", "points", "score", "firepower", "upgrades", "stats"]:
+		cfg.set_value("run", key, get(key))
+	cfg.set_value("run", "achievements", Showrunner.unlocked.keys())
+	cfg.set_value("run", "drops", Ratings.drops)
+	cfg.save(save_path)
+
+
+func has_save() -> bool:
+	return FileAccess.file_exists(save_path)
+
+
+## The level a saved run would continue into (or -1).
+func saved_level() -> int:
+	var cfg := ConfigFile.new()
+	if cfg.load(save_path) != OK:
+		return -1
+	return cfg.get_value("run", "next_level", -1)
+
+
+func continue_game() -> bool:
+	var cfg := ConfigFile.new()
+	if cfg.load(save_path) != OK:
+		return false
+	var next: int = cfg.get_value("run", "next_level", 0)
+	if next <= 0 or next >= LEVELS.size():
+		return false
+	health = cfg.get_value("run", "health", MAX_HEALTH)
+	points = cfg.get_value("run", "points", 0)
+	score = cfg.get_value("run", "score", 0)
+	firepower = cfg.get_value("run", "firepower", 1)
+	upgrades = cfg.get_value("run", "upgrades", {"battery": 0, "hype": 0})
+	var saved_stats: Dictionary = cfg.get_value("run", "stats", {})
+	for k in stats:
+		stats[k] = saved_stats.get(k, 0)
+	Showrunner.reset_achievements()
+	for id in cfg.get_value("run", "achievements", []):
+		Showrunner.unlocked[id] = true
+	Ratings.drops = cfg.get_value("run", "drops", 0)
+	keys = {}
+	level_index = next - 1
+	main.show_break_room()
+	return true
+
+
+func clear_save() -> void:
+	if has_save():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
+
+
+# ------------------------------------------------------------------ settings
+
+const SETTINGS_PATH := "user://settings.cfg"
+
+
+func _load_settings() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) == OK:
+		music_on = cfg.get_value("audio", "music", true)
+		narration_on = cfg.get_value("audio", "narration", true)
+
+
+func _save_settings() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("audio", "music", music_on)
+	cfg.set_value("audio", "narration", narration_on)
+	cfg.save(SETTINGS_PATH)
+
+
 # ------------------------------------------------------------------ input
 
 func _setup_input() -> void:
@@ -143,6 +260,8 @@ func _setup_input() -> void:
 		"interact": [KEY_UP, KEY_W, KEY_E, JOY_BUTTON_DPAD_UP, JOY_BUTTON_B],
 		"pause": [KEY_ESCAPE, KEY_P, JOY_BUTTON_START],
 		"fullscreen": [KEY_F],
+		"toggle_music": [KEY_M],
+		"toggle_narration": [KEY_N],
 	}
 	for action in bindings:
 		if not InputMap.has_action(action):
