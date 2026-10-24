@@ -157,6 +157,36 @@ func _combat_checks() -> void:
 	await frames(30)
 	check("shot kills a rat drone", not is_instance_valid(rat) or rat.dead)
 
+	# Holding fire into empty air: one short burst, then nothing until re-pressed.
+	await frames(30)
+	var shots0: int = GameState.stats.shots
+	Input.action_press("shoot")
+	await frames(90)
+	Input.action_release("shoot")
+	var burst: int = GameState.stats.shots - shots0
+	check("held fire stops after a burst", burst == Rex.BURST, "(%d shots)" % burst)
+	await frames(2)
+	Input.action_press("shoot")
+	await frames(2)
+	Input.action_release("shoot")
+	check("re-pressing fire shoots again", GameState.stats.shots > shots0 + burst)
+
+	# Hits refill the burst: holding fire on a tough target keeps shooting.
+	await frames(20)
+	var tank := RatDrone.new()
+	tank.position = Vector2(rex.global_position.x + 40 * rex.facing, rex.global_position.y)
+	level.add_child(tank)
+	await frames(2)
+	tank.hp = 50
+	tank.stunned = 99.0
+	shots0 = GameState.stats.shots
+	Input.action_press("shoot")
+	await frames(90)
+	Input.action_release("shoot")
+	check("hitting enemies keeps the burst going", GameState.stats.shots - shots0 > Rex.BURST + 2,
+		"(%d shots)" % (GameState.stats.shots - shots0))
+	tank.queue_free()
+
 	# Stomp: drop Rex onto a rat.
 	rat = RatDrone.new()
 	rat.position = Vector2(21 * 16 + 8, 20 * 16)

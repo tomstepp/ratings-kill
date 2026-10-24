@@ -19,7 +19,8 @@ episode.
 | 3 | Studio backlot | Soundstage 9, Western Town Set, Sci-Fi Set | Boom-mic drones, camera-crane platforms, spotlight cues | The Director |
 | 4 | Network HQ | Lobby and Security, Server Farm, The Executive Floor | Exec drones that aim, laser gates | The Season Finale |
 
-- **Feel**: momentum running, variable jump height, coyote time, jump buffering, stacking blaster shots, and corner
+- **Feel**: momentum running, variable jump height, coyote time, jump buffering, stacking blaster shots (holding fire gives a 3-shot burst; hits on
+  enemies refill it, so tap again to keep spraying), and corner
   correction (clip a ledge's corner with your head and you slide past it instead of losing the jump)
 - **Levels**: keycards and locked doors, levers and bridges, lifts (they stop level with the ledge beside them),
   sliders, cranes, belts, live rails, laser gates, crates, TV blocks, secrets behind fake walls

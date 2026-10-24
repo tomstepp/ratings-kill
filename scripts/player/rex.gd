@@ -21,6 +21,7 @@ const MAX_FALL := 330.0
 const COYOTE := 0.1
 const JUMP_BUFFER := 0.12
 const SHOT_COOLDOWN := 0.2
+const BURST := 3  # shots per trigger pull; release and press again for more
 const INVULN := 1.3
 const PLATFORM_LAYER := 16  # one-way grates (physics layer 5)
 const CORNER_NUDGE := 7  # px Rex slides sideways to clear a ceiling corner mid-jump
@@ -47,6 +48,8 @@ var stomp_chain := 0
 var _coyote := 0.0
 var _buffer := 0.0
 var _shot_cd := 0.0
+var _burst_left := 0
+var _trigger_held := false
 var _invuln := 0.0
 var _hurt := 0.0
 var _knock := 0.0
@@ -172,7 +175,14 @@ func _physics_process(delta: float) -> void:
 	_was_pushing_wall = pushing
 
 	if not controls_locked:
-		if Input.is_action_pressed("shoot") and _shot_cd <= 0.0:
+		# Holding fire gives a short burst; landing a hit on an enemy tops it back up,
+		# so accurate shooting isn't throttled but spraying is.
+		var trigger := Input.is_action_pressed("shoot")
+		if trigger and not _trigger_held:
+			_burst_left = BURST
+		_trigger_held = trigger
+		if trigger and _shot_cd <= 0.0 and _burst_left > 0:
+			_burst_left -= 1
 			_shoot()
 		if Input.is_action_just_pressed("interact"):
 			for a in _interact.get_overlapping_areas():
@@ -268,6 +278,11 @@ func _shoot() -> void:
 		GameState.level.add_child(b)
 	Sfx.play_varied("shoot", 0.06, -5.0)
 	GameState.stat("shots")
+
+
+## Called by a bolt that hit an enemy: the burst refills.
+func shot_landed() -> void:
+	_burst_left = BURST
 
 
 ## Called by an enemy when Rex lands on it.

@@ -39,6 +39,8 @@ func _on_body(body: Node) -> void:
 		if body.has_method("is_alive") and not body.is_alive():
 			return
 		body.shot(1, self)
+		if body is Enemy and GameState.level and is_instance_valid(GameState.level.rex):
+			GameState.level.rex.shot_landed()
 	_done = true
 	if GameState.level:
 		GameState.level.burst(global_position, Art.c("cyan"), 4, 40.0)
