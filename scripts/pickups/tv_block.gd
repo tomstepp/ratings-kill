@@ -19,7 +19,7 @@ func _ready() -> void:
 	add_child(_sprite)
 
 
-func bonk(_rex: Node) -> void:
+func bonk(rex: Node) -> void:
 	var t := create_tween()
 	t.tween_property(_sprite, "position:y", -4.0, 0.06)
 	t.tween_property(_sprite, "position:y", 0.0, 0.08)
@@ -30,4 +30,7 @@ func bonk(_rex: Node) -> void:
 	Sfx.play("bonk")
 	_sprite.texture = Art.frame("tvblock", Vector2i(16, 16), 1)
 	Ratings.add(2, "BONK")
-	GameState.level.spawn_pickup(contents, global_position + Vector2(0, -12), true)
+	# The prize sits on top for a moment, then slides off the side Rex is facing
+	# and drops down to him, so it's never stranded out of reach.
+	var prize: Pickup = GameState.level.spawn_pickup(contents, global_position + Vector2(0, -12), true)
+	prize.slide_off(rex.facing if rex is Rex else 1)

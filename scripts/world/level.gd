@@ -22,6 +22,7 @@ const BELT_RIGHT := Vector2i(13, 0)
 const SOLID_TILES := [BRICK, FLOOR_TOP, FILL, BRIDGE, BELT_LEFT, BELT_RIGHT]
 const BELT_SPEED := 55.0
 const ATLAS_TILES := 14
+const RESPAWN_AFTER := 35.0  # seconds before a killed grunt returns
 
 static var _tilesets := {}
 
@@ -356,6 +357,28 @@ func _spawn_entities() -> void:
 	rex.boom = boom
 
 
+## A grunt from the map comes back a while after it's killed, so a cleared
+## stage still has an audience-pleaser in it. It only reappears while its spot
+## is offscreen, so nothing pops in on top of Rex.
+func _queue_respawn(script: Script, fast: bool, pos: Vector2) -> void:
+	if is_queued_for_deletion() or not is_inside_tree() or _complete:
+		return
+	get_tree().create_timer(RESPAWN_AFTER).timeout.connect(_try_respawn.bind(script, fast, pos))
+
+
+func _try_respawn(script: Script, fast: bool, pos: Vector2) -> void:
+	if _complete or not is_inside_tree():
+		return
+	var view := camera.get_screen_center_position()
+	if absf(pos.x - view.x) < 200.0 and absf(pos.y - view.y) < 130.0:
+		get_tree().create_timer(3.0).timeout.connect(_try_respawn.bind(script, fast, pos))
+		return
+	var e: Enemy = script.new()
+	if fast:
+		e.set("fast", true)
+	_add(e, pos)
+
+
 ## Lifts ('L') ride up from where they're placed until just below the ceiling,
 ## or stop level with the highest ledge beside them so Rex can step straight off;
 ## sliders ('H') ride right until they meet a wall. Both are two tiles wide.
@@ -394,6 +417,8 @@ func _open(x: int, y: int) -> bool:
 
 
 func _add(node: Node2D, pos: Vector2) -> Node2D:
+	if node is Enemy and not node is Boss:
+		node.tree_exiting.connect(_queue_respawn.bind(node.get_script(), node.get("fast") == true, pos))
 	node.position = pos
 	add_child(node)
 	return node
@@ -449,13 +474,14 @@ func floor_below(pos: Vector2) -> float:
 
 # ------------------------------------------------------------------ effects
 
-func spawn_pickup(kind: String, pos: Vector2, pop := false) -> void:
+func spawn_pickup(kind: String, pos: Vector2, pop := false) -> Pickup:
 	var p := Pickup.new()
 	p.kind = kind
 	p.position = pos
 	add_child.call_deferred(p)
 	if pop:
 		p.ready.connect(p.pop_out, CONNECT_ONE_SHOT)
+	return p
 
 
 func burst(pos: Vector2, color: Color, amount := 10, speed := 70.0) -> void:

@@ -19,6 +19,13 @@ var _t := randf() * TAU
 var _base_y := 0.0
 var _taken := false
 var _ready_t := 0.0
+var _slide := 0  # set by slide_off: the direction it slides once it's done sitting
+var _hold := 0.0
+var _vy := 0.0
+var _start_x := 0.0
+
+const SLIDE_SPEED := 48.0
+const FALL_GRAVITY := 600.0
 
 
 func _ready() -> void:
@@ -45,6 +52,44 @@ func pop_out() -> void:
 	t.tween_property(self, "position:y", position.y - 14.0, 0.18).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 	t.tween_property(self, "position:y", position.y - 4.0, 0.16).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 	t.tween_callback(func(): _base_y = position.y)
+
+
+## Sit for `hold` seconds, then slide `dir` until it drops off the edge and
+## lands; it stops once it's down.
+func slide_off(dir: int, hold := 1.2) -> void:
+	_slide = dir if dir != 0 else 1
+	_hold = hold + 0.35  # after the pop-out hop
+	_start_x = position.x
+
+
+func _physics_process(delta: float) -> void:
+	if _slide == 0 or _taken:
+		return
+	_hold -= delta
+	if _hold > 0.0:
+		return
+	var space := get_world_2d().direct_space_state
+	var ahead := PhysicsPointQueryParameters2D.new()
+	ahead.position = global_position + Vector2(_slide * 7, 0)
+	ahead.collision_mask = 1
+	if not space.intersect_point(ahead, 1).is_empty():
+		_slide = -_slide
+	var below := PhysicsPointQueryParameters2D.new()
+	below.position = global_position + Vector2(0, 7)
+	below.collision_mask = 1 | 16
+	var grounded := not space.intersect_point(below, 1).is_empty()
+	if grounded and _vy > 0.0 and absf(position.x - _start_x) > 10.0:
+		_slide = 0  # landed below the block: stay put so Rex can grab it
+		_vy = 0.0
+		return
+	if grounded:
+		_vy = 0.0
+		position.x += _slide * SLIDE_SPEED * delta
+	else:
+		_vy = minf(_vy + FALL_GRAVITY * delta, 300.0)
+		position.y += _vy * delta
+	if GameState.level and position.y > GameState.level.kill_y:
+		queue_free()
 
 
 func _process(delta: float) -> void:

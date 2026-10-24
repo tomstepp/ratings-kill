@@ -275,6 +275,14 @@ func _world_checks() -> void:
 	await frames(30)
 	Input.action_release("jump")
 	check("bonking a TV block uses it", tv.used)
+	# Its prize slides off the top and comes down to Rex's level (or into his hands).
+	rex.global_position.x -= 48.0
+	await frames(240)
+	var stranded := false
+	for n in level.get_children():
+		if n is Pickup and absf(n.global_position.x - tv.global_position.x) < 20.0 and n.global_position.y < tv.global_position.y:
+			stranded = true
+	check("TV block prizes drop off the block", not stranded)
 	await frames(40)
 
 	# Lever extends the bridge.
@@ -649,6 +657,26 @@ func _season_checks() -> void:
 	await frames(60 * 7)
 	check("an empty meter cancels the episode on floor 3", canceled[0])
 	await frames(200)
+
+	# With every enemy down, an empty meter doesn't cancel (boredom takes over instead).
+	await open_level(8)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.remove_from_group("enemies")
+		e.queue_free()
+	await frames(2)
+	Ratings.value = 0.0
+	await frames(60 * 2)
+	check("no cancel countdown on a cleared stage", Ratings.cancel_t == 0.0)
+
+	# Killed grunts come back offscreen.
+	var far := Vector2(level.width * 16 - 40, 40)
+	level._try_respawn(RatDrone, true, far)
+	await frames(2)
+	var back := false
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e is RatDrone and e.fast and e.position.distance_to(far) < 32.0:
+			back = true
+	check("killed grunts respawn offscreen", back)
 
 	# Laser gates hurt while live (Lobby and Security, index 12).
 	await open_level(12)
