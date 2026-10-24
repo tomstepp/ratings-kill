@@ -9,7 +9,7 @@ const root = join(fileURLToPath(new URL("..", import.meta.url)), "build", "web")
 const port = Number(process.env.PORT ?? process.argv[2] ?? 8060);
 const types = {
   ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm",
-  ".pck": "application/octet-stream", ".png": "image/png", ".svg": "image/svg+xml",
+  ".pck": "application/octet-stream", ".png": "image/png", ".svg": "image/svg+xml", ".txt": "text/plain; charset=utf-8",
 };
 
 createServer(async (req, res) => {

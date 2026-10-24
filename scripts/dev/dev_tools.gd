@@ -3,6 +3,7 @@ extends Node
 ##   --capture=DIR   save a screenshot every --every=N physics ticks (60 per second), quit after --shots=N
 ##   --bot           hold right, hop and shoot: a crude smoke-test player
 ##   --god           Rex can't lose health
+##   --save=PATH     use another save file (e.g. user://none.cfg for a clean title screen)
 
 var capture_dir := ""
 var every := 60
@@ -29,6 +30,8 @@ func _ready() -> void:
 			bot = true
 		elif arg == "--god":
 			god = true
+		elif arg.begins_with("--save="):
+			GameState.save_path = arg.get_slice("=", 1)
 		elif arg == "--quit-test":
 			get_tree().create_timer(2.0).timeout.connect(GameState.quit_game)
 

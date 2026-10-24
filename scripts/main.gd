@@ -25,6 +25,9 @@ func _ready() -> void:
 			GameState.points = 2500
 			_swap(BreakRoom.new())
 			return
+		if arg == "--screen=credits":
+			show_credits()
+			return
 		if arg == "--screen=end":
 			show_end()
 			return
@@ -66,6 +69,10 @@ func show_card(i: int) -> void:
 	var card := LevelCard.new()
 	card.index = i
 	_swap(card)
+
+
+func show_credits() -> void:
+	_swap(Credits.new())
 
 
 func show_break_room() -> void:

@@ -77,10 +77,15 @@ Dev shortcuts (arguments after `--`):
 Export templates for Godot 4.7.2 are needed once (Editor → Manage Export Templates, or the official `.tpz`).
 
 ```bash
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --export-release "Web" build/web/index.html
+sh tools/build_web.sh   # web build + website extras + itch.io zip
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . --export-release "macOS" build/mac/RatingsKill.zip
 node tools/serve_web.mjs 8060   # then open http://localhost:8060
 ```
+
+The web page is `web/shell.html`: a start screen with a Play button (nothing downloads until it's pressed), a notice for
+phones and tablets, link-preview tags for ratingskillgame.com, and a link to `licenses.txt` (the Godot license and its
+third-party notices, also shown in the in-game Credits). `web/title.png` and `web/og.png` come from
+`tools/make_web_images.py`.
 
 The web build is single-threaded, so it runs on any static host (itch.io, Netlify, GitHub Pages) without special
 headers. For itch.io, upload `build/ratings-kill-web.zip` as an HTML game.
