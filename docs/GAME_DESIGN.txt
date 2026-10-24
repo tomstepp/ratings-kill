@@ -1,0 +1,341 @@
+Ratings Kill — Game Design Doc
+
+Exported Oct 24, 2026 from the Claude Doc: 
+https://claude.ai/artifact/W4hXYDWmEx3AqkmQkpPYY3
+
+
+Pitch
+
+Prime Time Descent
+ is a Duke Nukem (1991)-style 2D run-and-gun platformer. A cocky has-been fights his way down an alien-run dungeon that is broadcast live across the galaxy. You play for the audience: stylish kills raise your ratings, and ratings buy you loot.
+
+
+
+Working title options: 
+Prime Time Descent
+, 
+Floor Show
+, 
+Ratings Kill
+, 
+Live From Level One
+.
+
+World and premise
+
+An intergalactic streaming conglomerate, the Galactic Content Syndicate, buys Earth's broadcast rights and turns the planet's underground into the set of its hit survival show. Survivors are drafted as contestants and dropped into the Tower Below, a stack of themed floors built from scraps of human life.
+
+
+
+Goal:
+ reach each level's exit, beat each floor's boss, and get deeper than any contestant before you.
+
+Tone:
+ dark comedy about reality TV, sponsorship, and corporate cheerfulness. Violence is cartoonish, never gory.
+
+Rules of the show:
+ viewers watch every move, the network rewards drama and punishes boredom, and sponsors want their products used on camera.
+
+Cast
+
+Five original roles carry the show; each has one clear job in gameplay.
+
+
+
+Role
+
+Name
+
+Concept
+
+In gameplay
+
+Hero
+
+Rex Halloway
+
+Former star of regional mattress commercials who believes he is an action hero. All swagger, mostly luck.
+
+Player character; quips fire on kills, pickups, and near-deaths
+
+Sidekick
+
+B0-0M ("Boom")
+
+Network-issued camera drone assigned to film Rex. Thinks it is the real star.
+
+Follows Rex; one ability: flash-stun enemies or scout ahead
+
+Announcer
+
+The Showrunner
+
+The show's system AI. Relentlessly upbeat, passive-aggressive, legally obligated to be helpful.
+
+Pop-ups for achievements, rules, and sponsor messages
+
+Rival
+
+Tanya Voss
+
+Fan-favorite contestant who always seems to be one level ahead.
+
+Cameos; races Rex to sponsor drops
+
+Bosses
+
+The Mascot, The Floor Manager, The Season Finale
+
+Network personalities guarding each floor.
+
+One pattern-based boss fight per floor
+
+Core gameplay
+
+Levels play like Duke Nukem (1991): open, multi-path rooms where you hunt for keycards to reach the exit, with classic Mario jump feel layered on top.
+
+
+
+From Duke Nukem (1991)
+
+
+
+
+Shoot left or right only at first; firepower upgrades stack extra shots.
+
+Colored keycards open matching doors; switches extend bridges and lifts.
+
+Health is a row of 8 pips, refilled by food and soda pickups.
+
+Breakable crates hide pickups, points, and secrets.
+
+Each level ends at an exit door; each floor ends with a boss.
+
+
+
+From classic Mario
+
+
+
+
+Variable jump height (hold to jump higher), with coyote time and jump buffering so jumps feel fair.
+
+Stomp some enemies; bonk blocks from below to release items.
+
+A short run-up before top speed, so movement has momentum.
+
+
+
+Controls:
+ move, jump, shoot, interact (doors, switches), drone ability.
+
+Signature hooks
+
+The show layer is what makes this more than a Duke clone: you play for an audience, and the audience pays out.
+
+
+
+Ratings meter:
+ stylish play fills it: stomp chains, no-damage rooms, found secrets, kills right after a quip. A full meter triggers a sponsor drop.
+
+Sponsor drops:
+ crates fall from the ceiling with weapons, health, or gag items under fake brand names.
+
+Boredom penalty:
+ if ratings sit low too long, the Showrunner "spices things up" with extra enemies or a hazard.
+
+Achievements:
+ snarky pop-ups for silly things (first death, walking into the same wall ten times), each with a small reward.
+
+Safe rooms:
+ a break room between levels to spend points on upgrades and hear from the Showrunner and Boom.
+
+Structure
+
+Season 1 copies Duke's three-episode layout: three floors of six levels each, a safe room between levels, and a boss at the bottom of every floor.
+
+
+
+Floor
+
+Set
+
+New enemy or mechanic
+
+Boss
+
+1
+
+Abandoned subway
+
+Rat drones, electrified rails
+
+The Mascot
+
+2
+
+Shopping mall after hours
+
+Security bots, escalators, mannequins that move when you look away
+
+The Floor Manager
+
+3
+
+Studio backlot
+
+Stage lights, moving set pieces, camera cranes
+
+The Season Finale
+
+
+
+Floor 1 is the first shippable chunk; floors 2 and 3 are stretch goals.
+
+Art and audio style
+
+Low-res and limited-palette, close to Duke 1's EGA look but with its own colors.
+
+
+
+Resolution:
+ 320×180 internal, scaled up by whole numbers for crisp pixels.
+
+Palette:
+ one fixed 16-color palette, so everything matches without a dedicated artist.
+
+Tiles and sprites:
+ 16×16 tiles; Rex about 16×32.
+
+Placeholders:
+ free CC0 packs from kenney.nl and itch.io until custom art exists.
+
+Tools:
+ Aseprite (paid) or LibreSprite (free) for pixel art; Godot's built-in tilemap editor for levels.
+
+Audio:
+ chiptune music, retro sound effects made in jsfxr, and the Showrunner speaking in text with a voice blip.
+
+Tech stack
+
+Godot 4 with GDScript: free, light on a MacBook, strong 2D tools, and exports to Mac, Windows, and the web.
+
+
+
+Hero:
+ CharacterBody2D with a hand-tuned state machine (idle, run, jump, fall, hurt).
+
+Levels:
+ TileMapLayer for terrain; Area2D nodes for pickups, keycards, doors, and exits.
+
+Shared state:
+ autoload singletons for game state, the ratings meter, and Showrunner pop-ups.
+
+Web build:
+ runs in a browser, so a playable version can live at a link.
+
+
+
+prime-time-descent/
+
+
+
+  project.godot
+
+
+
+  scenes/
+
+
+
+    player/      # Rex, Boom drone
+
+
+
+    enemies/
+
+
+
+    pickups/     # keycards, health, firepower, crates
+
+
+
+    levels/      # floor1_level1.tscn ...
+
+
+
+    ui/          # HUD, ratings meter, Showrunner pop-ups
+
+
+
+  scripts/
+
+
+
+    autoload/    # game_state.gd, ratings.gd, showrunner.gd
+
+
+
+  assets/
+
+
+
+    sprites/  tiles/  audio/  fonts/
+
+Build plan
+
+Build in four phases, each ending at a gate you check before moving on. The vertical slice is the first real milestone.
+
+
+
+Phase 1 · Feel
+ — Rex runs, jumps, and shoots in a test room (variable jump, coyote time, jump buffer, horizontal blaster).
+
+Gate: jumping feels good on keyboard and controller.
+
+Phase 2 · Vertical slice
+ — one full level from start to exit: tiles, keycards, locked doors, pickups, two enemy types, health pips, a firepower upgrade, the exit door.
+
+Gate: someone else beats the level without help.
+
+Phase 3 · Show layer
+ — ratings meter, sponsor drops, Showrunner pop-ups, safe room shop, Boom's drone ability, Rex's first quips.
+
+Gate: players chase ratings on purpose.
+
+Phase 4 · Floor 1
+ — six levels plus The Mascot boss, title screen, save between levels, web build you can share by link.
+
+
+
+Phase 1 checklist
+
+
+
+
+Install Godot 4 and create the project with the folder layout above
+
+Set the window to 320×180 with integer scaling
+
+Build a test room from a placeholder tileset
+
+Add Rex as a CharacterBody2D with run, variable jump, coyote time, and jump buffer
+
+Add a horizontal blaster and one enemy that dies when shot
+
+Tune run and jump numbers until it feels good
+
+IP guardrails
+
+Keep the genre, tone, and mechanics; leave out anything that points to a specific book series or game.
+
+
+
+No character names, catchphrases, locations, or plot beats borrowed from existing books or games.
+
+Rex, Boom, the Showrunner, and the show itself stay distinct personalities, not one-to-one swaps of existing characters.
+
+No references to other works in the title, store page, or marketing.
+
+Check each free asset pack's license before using it (CC0 is simplest).
+

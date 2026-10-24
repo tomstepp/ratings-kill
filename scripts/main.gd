@@ -1,0 +1,59 @@
+extends Node
+## Root of the game. Swaps between the title, levels, the break room and the end card.
+
+var _current: Node
+
+
+func _ready() -> void:
+	GameState.main = self
+	if not OS.get_cmdline_user_args().is_empty():
+		add_child(preload("res://scripts/dev/dev_tools.gd").new())
+	# Dev shortcuts: godot --path . -- --level=1   (or --screen=break / --screen=end)
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--test":
+			add_child(preload("res://scripts/dev/playtest.gd").new())
+			return
+		if arg.begins_with("--room="):
+			GameState.new_game()
+			show_level("res://levels/%s.txt" % arg.get_slice("=", 1))
+			return
+		if arg.begins_with("--level="):
+			GameState.new_game()
+			GameState.start_level(int(arg.get_slice("=", 1)))
+			return
+		if arg == "--screen=break":
+			GameState.points = 2500
+			_swap(BreakRoom.new())
+			return
+		if arg == "--screen=end":
+			_swap(EndCard.new())
+			return
+	show_title()
+
+
+func _swap(node: Node) -> void:
+	get_tree().paused = false
+	if _current:
+		_current.queue_free()
+	_current = node
+	add_child.call_deferred(node)
+
+
+func show_title() -> void:
+	Ratings.stop()
+	Showrunner.clear()
+	_swap(TitleScreen.new())
+
+
+func show_level(path: String) -> void:
+	var level := Level.new()
+	level.load_layout(path)
+	_swap(level)
+
+
+func show_break_room() -> void:
+	_swap(BreakRoom.new())
+
+
+func show_end() -> void:
+	_swap(EndCard.new())
