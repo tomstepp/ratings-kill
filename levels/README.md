@@ -21,7 +21,7 @@ hint: boom|Psst.               # one per T in the map, in reading order (left-to
 |---|---|
 | `#` | Brick wall (solid) |
 | `=` | Concrete floor (solid; the top row gets the yellow safety stripe) |
-| `-` | Grate: one-way platform (jump up through it, DOWN+JUMP to drop) |
+| `-` | Grate: one-way platform (jump up through it, DOWN to drop) |
 | `F` | Fake wall: looks solid, walk straight through (hide secrets behind it) |
 | `m` | Bridge tile, appears when a lever is pulled |
 | `z` | Electrified rail (put it on top of a floor; cycles on and off) |

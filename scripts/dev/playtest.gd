@@ -608,6 +608,23 @@ func _season_checks() -> void:
 	await frames(240)
 	check("laser gates hurt", GameState.health < 8)
 
+	# Down alone drops Rex through a grate (the Finale arena, index 15).
+	await open_level(15)
+	var grate := Vector2i(-1, -1)
+	for y in level.height:
+		for x in level.width:
+			if grate.x < 0 and level.cell(x, y) == "-" and level.cell(x - 1, y) == "-" and level.cell(x + 1, y) == "-":
+				grate = Vector2i(x, y)
+	rex.global_position = Vector2(grate.x * 16 + 8, grate.y * 16)
+	rex.velocity = Vector2.ZERO
+	await frames(10)
+	var gy := rex.global_position.y
+	Input.action_press("move_down")
+	await frames(2)
+	Input.action_release("move_down")
+	await frames(30)
+	check("down drops through a grate", rex.global_position.y > gy + 16.0, "(%.0f -> %.0f)" % [gy, rex.global_position.y])
+
 	# The three new bosses.
 	for pair in [[7, "the Floor Manager", "manager"], [11, "the Director", "director"]]:
 		var b: Boss = await boss_fight(pair[0], pair[1])

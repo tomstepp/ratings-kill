@@ -144,7 +144,7 @@ func _ready() -> void:
 	pl.position = Vector2(0, 62)
 	pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pause.add_child(pl)
-	var help := Art.label("WE'LL BE RIGHT BACK AFTER THESE MESSAGES.\n\nARROWS/WASD MOVE   SPACE/Z JUMP   X/J SHOOT\nUP/E DOORS+SWITCHES   C/L DRONE FLASH\nDOWN+JUMP DROP THROUGH GRATES   F FULLSCREEN\nM MUSIC ON/OFF   N NARRATION ON/OFF\n\nESC: RESUME     Q: QUIT TO TITLE", Art.c("steel"))
+	var help := Art.label("WE'LL BE RIGHT BACK AFTER THESE MESSAGES.\n\nARROWS/WASD MOVE   SPACE/Z JUMP   X/J SHOOT\nUP/E DOORS+SWITCHES   C/L DRONE FLASH\nDOWN: DROP THROUGH GRATES   F FULLSCREEN\nM MUSIC ON/OFF   N NARRATION ON/OFF\n\nESC: RESUME     Q: QUIT TO TITLE", Art.c("steel"))
 	help.size = Vector2(320, 80)
 	help.position = Vector2(0, 82)
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

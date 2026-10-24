@@ -44,7 +44,7 @@ reworked for Floor 2) are kept in `levels/cut/`.
 | Jump (hold for height) | Space / Z / K | A |
 | Shoot | X / J | X |
 | Doors, levers, exit | Up / W / E | D-pad up / B |
-| Drop through grate | Down + Jump | |
+| Drop through grate | Down (or Down + Jump) | D-pad down |
 | Boom's flash-stun | C / L | Y |
 | Pause (Q to quit while paused) | Esc / P | Start |
 | Fullscreen | F | |

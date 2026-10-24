@@ -140,12 +140,14 @@ func _physics_process(delta: float) -> void:
 		_coyote = COYOTE
 		if stomp_chain > 0:
 			stomp_chain = 0
-	if not controls_locked and Input.is_action_just_pressed("jump"):
-		if Input.is_action_pressed("move_down") and on_floor and _on_platform():
-			_drop_t = 0.25
-			collision_mask = 1
-		else:
-			_buffer = JUMP_BUFFER
+	# Down drops through a grate, Duke-style (Down+Jump works too).
+	var drop := Input.is_action_just_pressed("move_down") or \
+		(Input.is_action_just_pressed("jump") and Input.is_action_pressed("move_down"))
+	if not controls_locked and drop and on_floor and _on_platform():
+		_drop_t = 0.25
+		collision_mask = 1
+	elif not controls_locked and Input.is_action_just_pressed("jump"):
+		_buffer = JUMP_BUFFER
 	if _buffer > 0.0 and _coyote > 0.0:
 		_jump()
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
