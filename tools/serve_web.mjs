@@ -22,4 +22,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end("not found");
   }
-}).listen(port, () => console.log(`Ratings Kill web build at http://localhost:${port}`));
+}).listen(port, () => console.log(`Super Rex Live! web build at http://localhost:${port}`));

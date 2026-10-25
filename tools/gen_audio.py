@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate retro sound effects and chiptune loops for Ratings Kill.
+"""Generate retro sound effects and chiptune loops for Super Rex Live!.
 
 A tiny jsfxr-style synth in pure standard library Python. Run from the
 project root with `python3 tools/gen_audio.py`. Output: assets/audio/*.wav

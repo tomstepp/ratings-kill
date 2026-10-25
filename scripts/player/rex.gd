@@ -31,7 +31,7 @@ const QUIPS := {
 		"And scene.", "Should've read the script."],
 	"stomp": ["Sole proprietor!", "Step on it!", "Floor seats!", "Mind the boots."],
 	"pickup": ["Product placement!", "Don't mind if I do.", "Hydration is self-care.", "Expensed."],
-	"near_death": ["I've had worse reviews.", "Just a flesh wound. Mostly.", "Is my good side bleeding?",
+	"near_death": ["I've had worse reviews.", "Just a scratch. Mostly.", "Is my good side okay?",
 		"Somebody call my agent."],
 	"key": ["Access granted. Obviously.", "Keycard? I AM the key."],
 	"secret": ["Hidden talent!", "Nobody reads the fine print."],
@@ -368,7 +368,7 @@ func _fell_out() -> void:
 	Showrunner.say("Mind the gap! That one's coming out of your appearance fee.")
 
 
-## Say something cocky. Kills soon after a quip score a QUIP KILL bonus.
+## Say something cocky. Takedowns soon after a quip score a QUIP COMBO bonus.
 func quip(kind: String, force := false) -> void:
 	if state == State.DEAD or (_quip_cd > 0.0 and not force):
 		return

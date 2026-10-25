@@ -554,7 +554,7 @@ func _on_sponsor_drop() -> void:
 			break
 	var crate := SponsorCrate.new()
 	crate.position = ceiling_above(spot, 6) + Vector2(0, 8)
-	add_child(crate)
+	add_child.call_deferred(crate)  # may be triggered from inside a physics callback
 
 
 func _on_boredom() -> void:
@@ -583,10 +583,11 @@ func _on_boredom() -> void:
 
 
 ## Drop a stage light (after a blinking warning) above `p`. False if `p` is inside a wall.
-func drop_light(p: Vector2, delay := 0.0) -> bool:
+func drop_light(p: Vector2, delay := 0.0, damage := 2) -> bool:
 	if not is_empty(_cell_at(p)):
 		return false
 	var light := StageLight.new()
+	light.damage = damage
 	light.position = ceiling_above(p, 7)
 	light.floor_y = floor_below(p)
 	if delay > 0.0:

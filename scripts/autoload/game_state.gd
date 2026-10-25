@@ -48,6 +48,7 @@ func _init() -> void:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_input()
+	_migrate_old_data()
 	_load_settings()
 	get_tree().auto_accept_quit = false
 
@@ -271,6 +272,17 @@ func clear_save() -> void:
 # ------------------------------------------------------------------ settings
 
 const SETTINGS_PATH := "user://settings.cfg"
+
+
+## The game used to be called Ratings Kill, which kept its data in another
+## folder; carry that save and settings over the first time.
+func _migrate_old_data() -> void:
+	var old := OS.get_user_data_dir().get_base_dir().path_join("Ratings Kill")
+	for f in ["save.cfg", "settings.cfg"]:
+		var src := old.path_join(f)
+		var dst := OS.get_user_data_dir().path_join(f)
+		if FileAccess.file_exists(src) and not FileAccess.file_exists(dst):
+			DirAccess.copy_absolute(src, dst)
 
 
 func _load_settings() -> void:

@@ -198,4 +198,4 @@ func _on_enrage() -> void:
 func _die() -> void:
 	mode = Mode.DYING
 	sprite.play("hurt")
-	_finale("The Floor Manager has clocked out. Permanently. Who approves my timesheets now?!", 36.0)
+	_finale("The Floor Manager has clocked out early. Who approves my timesheets now?!", 36.0)

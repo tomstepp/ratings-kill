@@ -19,7 +19,7 @@ const BORED_BELOW := 15.0
 const BORED_AFTER := 9.0  # seconds spent low before the penalty
 const BORED_COOLDOWN := 18.0
 const CLEAN_EVERY := 25.0  # seconds without damage for a CLEAN RUN bonus
-const QUIP_WINDOW := 2.5  # kill this soon after a quip for a bonus
+const QUIP_WINDOW := 2.5  # take an enemy down this soon after a quip for a bonus
 const TIER := 25.0  # every 25 points of meter adds x1 to the cash multiplier
 const CANCEL_FROM_FLOOR := 2  # floor index (0-based) where an empty meter cancels you
 const CANCEL_AFTER := 6.0  # seconds at zero before the plug is pulled
@@ -31,7 +31,7 @@ const GRADE_LINES := {
 	"A": "Strong numbers! The sponsors are almost smiling.",
 	"B": "Solid ratings. Respectable. Forgettable, but respectable.",
 	"C": "Mediocre numbers. We'll fix it in post.",
-	"D": "Those ratings were a crime scene. Back to the break room.",
+	"D": "Those ratings were a disaster. Back to the break room.",
 }
 
 var value := START
@@ -149,7 +149,7 @@ func on_kill(how: String, was_stunned: bool) -> void:
 		add(6, "TAKEDOWN")
 	if quip_bonus:
 		_last_quip = -100.0
-		add(10, "QUIP KILL")
+		add(10, "QUIP COMBO")
 
 
 func on_stomp_chain(chain: int) -> void:

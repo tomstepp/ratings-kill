@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Ratings Kill"
+config/name="Super Rex Live"
 config/description="A run-and-gun platformer broadcast live across the galaxy."
 boot_splash/show_image=false
 boot_splash/bg_color=Color(0.078, 0.106, 0.2, 1)

@@ -1,7 +1,7 @@
 name: Lobby and Security
 floor: 4
 music: music_hq
-intro: showrunner|Floor four: NETWORK HQ! You're on the corporate floors now. Please sign the visitor log. In blood. Kidding!
+intro: showrunner|Floor four: NETWORK HQ! You're on the corporate floors now. Please sign the visitor log. In glitter pen. Corporate insists.
 intro: boom|Laser gates flicker before they fire. Watch the flicker, then go. Also: their drones shoot at angles. Rude.
 intro: showrunner|And remember, if nobody's watching, you're CANCELED. The executives are watching. Always.
 hint: showrunner|Laser gates! They cycle on and off. Our insurance covers the gates, not you.

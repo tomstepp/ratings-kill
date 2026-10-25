@@ -3,7 +3,7 @@ floor: 1
 ; Legend lives in levels/README.md
 intro: showrunner|Welcome to the Tower Below! I'm the Showrunner. Find the exit and look fabulous doing it.
 intro: boom|And I'm B0-0M, your camera drone. Press C and I'll flash anything ugly. Present company excluded.
-intro: showrunner|See the RATINGS meter up top? Stomps, combos, secrets and kills fill it. It drains when you dawdle.
+intro: showrunner|See the RATINGS meter up top? Stomps, combos, secrets and takedowns fill it. It drains when you dawdle.
 intro: showrunner|And the higher it is, the more every dollar pays: up to CASH x4. Entertain, and get rich!
 hint: showrunner|Electrified rails! Very on-brand. Stand at the lever and press UP to extend the bridge.
 hint: boom|That red door wants a red keycard. I saw one up high. I see everything. It's a burden.

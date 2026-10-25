@@ -716,6 +716,20 @@ func _season_checks() -> void:
 		await frames(200)
 		check("beating %s opens the exit" % pair[1], find(ExitDoor) != null and Showrunner.unlocked.has(pair[2]))
 
+	# Only the Director himself hurts; his crane seat doesn't.
+	var dir_boss: Director = await boss_fight(11, "the Director (contact)")
+	dir_boss.mode = Director.Mode.DYING  # hold still for the test
+	await frames(2)
+	GameState.health = 8
+	rex.global_position = dir_boss.global_position + Vector2(18, 0)  # beside the seat, below his body
+	rex.velocity = Vector2.ZERO
+	rex._invuln = 0.0
+	dir_boss.touch_rex(rex, rex.global_position.y, false)
+	var seat_safe := GameState.health == 8
+	rex.global_position = dir_boss.global_position + Vector2(0, -8)  # right into him
+	dir_boss.touch_rex(rex, rex.global_position.y, false)
+	check("the Director's crane seat is safe, he isn't", seat_safe and GameState.health < 8, "(hp %d)" % GameState.health)
+
 	var fin: Finale = await boss_fight(15, "the Season Finale")
 	var f0 := fin.hp
 	fin.mode = Finale.Mode.IDLE

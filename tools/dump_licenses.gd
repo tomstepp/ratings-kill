@@ -5,7 +5,7 @@ extends SceneTree
 
 func _init() -> void:
 	var f := FileAccess.open("res://build/web/licenses.txt", FileAccess.WRITE)
-	f.store_string("RATINGS KILL - A GAME BY TOM STEPP\n\n" + LicenseText.full() + "\n")
+	f.store_string("SUPER REX LIVE! - A GAME BY TOM STEPP\n\n" + LicenseText.full() + "\n")
 	f.close()
 	print("wrote build/web/licenses.txt")
 	quit()

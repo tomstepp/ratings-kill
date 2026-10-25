@@ -173,7 +173,7 @@ func _refresh() -> void:
 		# Low health: the last hearts throb.
 		_hearts[i].modulate = Color(1.6, 1.6, 1.6) if GameState.health <= 2 and i < GameState.health and fmod(_t, 0.5) < 0.25 else Color.WHITE
 	_points.text = "$%d" % GameState.points
-	_fire.text = "GUN x%d" % GameState.firepower
+	_fire.text = "ZAP x%d" % GameState.firepower
 	for i in 3:
 		_keys[i].visible = GameState.keys.has(["red", "blue", "yellow"][i])
 	if level and is_instance_valid(level.boom):

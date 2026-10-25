@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate every sprite, tile and the pixel font for Ratings Kill.
+"""Generate every sprite, tile and the pixel font for Super Rex Live!.
 
 All art is drawn from one fixed 16-color palette, so everything matches.
 Pure standard library: run `python3 tools/gen_art.py` from the project root.

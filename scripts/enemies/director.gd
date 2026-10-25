@@ -61,6 +61,19 @@ func _ready() -> void:
 	position.y = _cruise_y
 
 
+## Only the Director himself hurts. His crane seat and rig are scenery, so
+## brushing past them is safe (his whole sprite still takes bolts and stomps).
+const PERSON := Rect2(-9, -31, 18, 23)  # head and torso, relative to his feet
+
+
+func touch_rex(r: Rex, prev_feet: float, falling: bool) -> void:
+	var person := Rect2(global_position + PERSON.position, PERSON.size)
+	var rex_box := Rect2(r.global_position + Vector2(-5, -27), Vector2(10, 27))
+	var stomp := falling and prev_feet <= global_position.y - top_offset + 8.0
+	if stomp or person.intersects(rex_box):
+		super(r, prev_feet, falling)
+
+
 func in_intro() -> bool:
 	return mode == Mode.INTRO
 
@@ -82,8 +95,9 @@ func _behave(delta: float) -> void:
 			position = position.move_toward(Vector2(x, _cruise_y + sin(_phase * 2.3) * 10.0), 110.0 * delta)
 			_light_t -= delta
 			if r and _light_t <= 0.0:
-				_light_t = 1.4 if not enraged else 0.9
-				GameState.level.drop_light(r.global_position + Vector2(r.velocity.x * 0.5, -20))
+				# His lights are a nuisance, not the main threat: sparse, and 1 damage.
+				_light_t = 2.6 if not enraged else 1.8
+				GameState.level.drop_light(r.global_position + Vector2(r.velocity.x * 0.5, -20), 0.0, 1)
 			if _t <= 0.0:
 				if randf() < 0.45:
 					_go(Mode.CLAP, 0.5)
@@ -153,7 +167,7 @@ func _on_enrage() -> void:
 	for dx in [-70.0, 70.0]:
 		var d := MicDrone.new()
 		d.position = Vector2(clampf(global_position.x + dx, _left, _right), _cruise_y + 30.0)
-		GameState.level.add_child(d)
+		GameState.level.add_child.call_deferred(d)  # enraged by a bolt mid-physics-step
 
 
 func _die() -> void:

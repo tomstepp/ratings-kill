@@ -3,6 +3,7 @@ extends Node
 ##   --capture=DIR   save a screenshot every --every=N physics ticks (60 per second), quit after --shots=N
 ##   --bot           hold right, hop and shoot: a crude smoke-test player
 ##   --god           Rex can't lose health
+##   --firepower=N   with --level, start with N shots per trigger pull (handled in main.gd)
 ##   --save=PATH     use another save file (e.g. user://none.cfg for a clean title screen)
 
 var capture_dir := ""

@@ -1,11 +1,12 @@
-# Ratings Kill
+# Super Rex Live!
 
 A Duke Nukem (1991)-style run-and-gun platformer. Rex Halloway, a former mattress-commercial star, fights his way down
 the Tower Below while the Galactic Content Syndicate broadcasts it live. Stylish play fills the ratings meter, a full
 meter buys sponsor drops and multiplies every dollar you earn, and a bored audience makes the Showrunner "spice
 things up".
 
-Design doc: [docs/GAME_DESIGN.txt](docs/GAME_DESIGN.txt).
+Design doc: [docs/GAME_DESIGN.txt](docs/GAME_DESIGN.txt). The game was called *Ratings Kill* until launch prep; the doc and this repo's folder still use
+that name.
 
 ## Status
 
@@ -32,7 +33,7 @@ episode.
   Network HQ hits harder
 - **Saving**: progress saves after every level; Continue on the title screen resumes in the break room
 - **Show layer**: Showrunner and B0-0M dialogue (narrated), 19 achievements, the break-room shop, Boom's flash-stun,
-  Rex's quips with QUIP KILL bonuses
+  Rex's quips with QUIP COMBO bonuses
 - Title screen, pause menu, end-of-floor and end-of-season cards, music per floor and per boss
 
 Not built yet: Tanya Voss cameos. Cut levels (*Rush Hour Ruins*, and the original *Express Line* and *Last Stop*, now
@@ -78,17 +79,17 @@ Export templates for Godot 4.7.2 are needed once (Editor → Manage Export Templ
 
 ```bash
 sh tools/build_web.sh   # web build + website extras + itch.io zip
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --export-release "macOS" build/mac/RatingsKill.zip
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --export-release "macOS" build/mac/SuperRexLive.zip
 node tools/serve_web.mjs 8060   # then open http://localhost:8060
 ```
 
 The web page is `web/shell.html`: a start screen with a Play button (nothing downloads until it's pressed), a notice for
-phones and tablets, link-preview tags for ratingskillgame.com, and a link to `licenses.txt` (the Godot license and its
+phones and tablets, link-preview tags for superrexlive.com, and a link to `licenses.txt` (the Godot license and its
 third-party notices, also shown in the in-game Credits). `web/title.png` and `web/og.png` come from
 `tools/make_web_images.py`.
 
 The web build is single-threaded, so it runs on any static host (itch.io, Netlify, GitHub Pages) without special
-headers. For itch.io, upload `build/ratings-kill-web.zip` as an HTML game.
+headers. For itch.io, upload `build/super-rex-live-web.zip` as an HTML game.
 
 ## How it's made
 

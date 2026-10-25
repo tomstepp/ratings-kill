@@ -11,7 +11,7 @@ const ROWS := 15
 const AUTO_SPEED := 18.0  # px per second
 const FAST_SPEED := 160.0
 const CREDITS := [
-	"RATINGS KILL",
+	"SUPER REX LIVE!",
 	"",
 	"A GAME BY TOM STEPP",
 	"",

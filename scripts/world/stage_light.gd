@@ -6,6 +6,7 @@ const WARN := 1.0
 const FALL_SPEED := 340.0
 
 var floor_y := 0.0
+var damage := 2
 var _t := 0.0
 var _sprite: Sprite2D
 var _marker: Label
@@ -41,7 +42,7 @@ func _physics_process(delta: float) -> void:
 	_marker.position.y = floor_y - global_position.y - 10
 	for b in get_overlapping_bodies():
 		if b is Rex:
-			b.hurt(2, global_position.x)
+			b.hurt(damage, global_position.x)
 	if global_position.y >= floor_y - 6:
 		Sfx.play("explode", 1.3, -4.0)
 		GameState.level.burst(global_position, Art.c("gold"), 16, 110.0)

@@ -19,7 +19,7 @@ const ACHIEVEMENTS := {
 	"sodas": {"title": "HYDRATION PARTNER", "reward": 100, "stat": 3},
 	"secrets": {"title": "SECRET SHOPPER", "reward": 200, "stat": 1},
 	"stomps": {"title": "FOOTWORK", "reward": 150, "stat": 5},
-	"kills": {"title": "BODY COUNT", "reward": 250, "stat": 25},
+	"kills": {"title": "CROWD PLEASER", "reward": 250, "stat": 25},
 	"chain3": {"title": "TRIPLE THREAT", "reward": 300},
 	"sponsor": {"title": "BRAND SYNERGY", "reward": 200},
 	"bored": {"title": "DEAD AIR", "reward": 50},

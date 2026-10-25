@@ -11,6 +11,6 @@ mkdir -p build/web
 "$GODOT" --headless --path . --export-release "Web" build/web/index.html > build/export.log 2>&1 || { cat build/export.log; exit 1; }
 "$GODOT" --headless --path . --script tools/dump_licenses.gd > /dev/null
 cp web/title.png web/og.png build/web/
-rm -f build/ratings-kill-web.zip
-(cd build/web && zip -qr ../ratings-kill-web.zip .)
-echo "web build ready in build/web ($(du -sh build/web | cut -f1)), itch.io zip at build/ratings-kill-web.zip"
+rm -f build/super-rex-live-web.zip
+(cd build/web && zip -qr ../super-rex-live-web.zip .)
+echo "web build ready in build/web ($(du -sh build/web | cut -f1)), itch.io zip at build/super-rex-live-web.zip"

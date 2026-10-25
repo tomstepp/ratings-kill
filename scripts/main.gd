@@ -19,6 +19,10 @@ func _ready() -> void:
 			return
 		if arg.begins_with("--level="):
 			GameState.new_game()
+			# --firepower=N starts the run with N shots per trigger pull (1-4).
+			for other in OS.get_cmdline_user_args():
+				if other.begins_with("--firepower="):
+					GameState.firepower = clampi(int(other.get_slice("=", 1)), 1, GameState.MAX_FIREPOWER)
 			GameState.start_level(int(arg.get_slice("=", 1)))
 			return
 		if arg == "--screen=break":

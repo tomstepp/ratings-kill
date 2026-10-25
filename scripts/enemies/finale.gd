@@ -151,7 +151,7 @@ func _pick() -> void:
 			_rain_t = 0.0
 			_go(Mode.RAIN, 2.4)
 		"summon":
-			Showrunner.say(["Let's revisit some fan favorites!", "Previously, on Ratings Kill..."].pick_random(), "showrunner", true)
+			Showrunner.say(["Let's revisit some fan favorites!", "Previously, on Super Rex Live!..."].pick_random(), "showrunner", true)
 			_go(Mode.SUMMON, 0.6)
 
 
