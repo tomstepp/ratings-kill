@@ -29,6 +29,14 @@ func _ready() -> void:
 			GameState.points = 2500
 			_swap(BreakRoom.new())
 			return
+		if arg == "--screen=settings":
+			show_settings()
+			return
+		if arg == "--screen=difficulty":
+			var title := TitleScreen.new()
+			_swap(title)
+			title.ready.connect(func(): title._open_difficulty(), CONNECT_ONE_SHOT)
+			return
 		if arg == "--screen=credits":
 			show_credits()
 			return

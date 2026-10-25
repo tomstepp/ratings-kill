@@ -68,12 +68,13 @@ func _process(delta: float) -> void:
 	_level_t += delta
 	_sum += value * delta
 	# Later floors' audiences are harder to please.
-	var decay: float = DECAY * (1.0 + 0.2 * GameState.difficulty()) * (1.0 - 0.3 * GameState.upgrades.hype)
+	var decay: float = DECAY * (1.0 + 0.2 * GameState.difficulty()) * (1.0 - 0.3 * GameState.upgrades.hype) \
+		* (0.7 if GameState.easy else 1.0)
 	_set_value(value - decay * delta)
 	# Only while there's something on screen worth watching: with every enemy down,
 	# the boredom penalty sends in rats instead of the network pulling the plug.
 	var has_enemies := not get_tree().get_nodes_in_group("enemies").is_empty()
-	if GameState.difficulty() >= CANCEL_FROM_FLOOR and value < CANCEL_BELOW and not _boss_fight() and has_enemies:
+	if not GameState.easy and GameState.difficulty() >= CANCEL_FROM_FLOOR and value < CANCEL_BELOW and not _boss_fight() and has_enemies:
 		cancel_t += delta
 		if cancel_t >= CANCEL_AFTER:
 			cancel_t = 0.0

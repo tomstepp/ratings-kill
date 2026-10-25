@@ -311,13 +311,13 @@ func is_invulnerable() -> bool:
 func hurt(amount: int, from_x: float) -> void:
 	if is_invulnerable():
 		return
-	GameState.damage(amount)
+	GameState.damage(GameState.hit_cost(amount))
 	Ratings.on_damage()
 	if GameState.health <= 0:
 		die()
 		return
 	Sfx.play("hurt")
-	_invuln = INVULN
+	_invuln = INVULN * (1.5 if GameState.easy else 1.0)
 	_hurt = 0.3
 	var away := signf(global_position.x - from_x)
 	if away == 0.0:
@@ -356,7 +356,7 @@ func _fell_out() -> void:
 		global_position = _last_safe
 		velocity = Vector2.ZERO
 		return
-	GameState.damage(2)
+	GameState.damage(GameState.hit_cost(2))
 	Ratings.on_damage()
 	if GameState.health <= 0:
 		die()

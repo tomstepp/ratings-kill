@@ -38,8 +38,15 @@ func text(t: String, pos: Vector2, color := Color("f4f1e8"), scale := 1, width :
 	return l
 
 
+## A line centered on screen. Placed by hand (every glyph is 6px wide at scale 1):
+## Label's own centering misjudges long lines of the pixel font. Text changed
+## later is re-centered.
 func centered(t: String, y: float, color := Color("f4f1e8"), scale := 1) -> Label:
-	return text(t, Vector2(0, y), color, scale, 320.0)
+	var l := text(t, Vector2(0, y), color, scale)
+	var place := func(): l.position.x = floorf((320 - l.text.length() * 6 * scale) / 2.0)
+	place.call()
+	l.item_rect_changed.connect(place)
+	return l
 
 
 func confirm_pressed() -> bool:

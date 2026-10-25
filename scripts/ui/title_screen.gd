@@ -4,6 +4,9 @@ extends Screen
 var _rex: AnimatedSprite2D
 var _options: Array[Label] = []
 var _ids: Array[String] = []
+var _diff: Array[Label] = []  # the difficulty picker, while it's open
+var _diff_desc: Label
+var _diff_choice := 0
 var _choice := 0
 
 
@@ -52,30 +55,84 @@ func _add_option(id: String, text: String) -> void:
 	_ids.append(id)
 
 
+const DIFFICULTIES := [
+	["NORMAL", "THE SHOW AS INTENDED."],
+	["EASY", "EVERY HIT COSTS 1 PIP. WEAKER BOSSES. NO CANCELING."],
+]
+
+
 func _process(delta: float) -> void:
 	super(delta)
+	if not _diff.is_empty():
+		_difficulty_input()
+		return
 	if Input.is_action_just_pressed("move_up") or Input.is_action_just_pressed("move_down"):
 		_choice = posmod(_choice + (1 if Input.is_action_just_pressed("move_down") else -1), _options.size())
 		Sfx.play("blip", 1.2)
 		_refresh()
 	_options[_choice].visible = fmod(_t, 1.0) < 0.75
 	if confirm_pressed():
-		set_process(false)
 		_options[_choice].visible = true
 		match _ids[_choice]:
 			"credits":
+				set_process(false)
 				Sfx.play("blip", 0.8)
 				GameState.main.show_credits()
 			"settings":
+				set_process(false)
 				Sfx.play("blip", 0.8)
 				GameState.main.show_settings()
 			"continue":
+				set_process(false)
 				Sfx.play("powerup")
 				if not GameState.continue_game():
 					GameState.new_game()
 			_:
-				Sfx.play("powerup")
-				GameState.new_game()
+				_open_difficulty()
+
+
+## New Game asks for a difficulty first (it can be changed later in Settings).
+func _open_difficulty() -> void:
+	Sfx.play("blip", 1.0)
+	for o in _options:
+		o.visible = false
+	_diff_choice = 1 if GameState.easy else 0
+	var title := centered("CHOOSE YOUR DIFFICULTY", 110, Art.c("cyan"))
+	_diff.append(title)
+	for i in DIFFICULTIES.size():
+		_diff.append(centered("", 121 + i * 10))
+	_diff_desc = centered("", 143, Art.c("metal"))
+	_diff.append(_diff_desc)
+	_t = 0.0  # so the press that opened this doesn't also confirm it
+	_refresh_difficulty()
+
+
+func _difficulty_input() -> void:
+	if Input.is_action_just_pressed("move_up") or Input.is_action_just_pressed("move_down"):
+		_diff_choice = 1 - _diff_choice
+		Sfx.play("blip", 1.2)
+		_refresh_difficulty()
+	elif Input.is_action_just_pressed("pause"):
+		# Back to the main menu.
+		for l in _diff:
+			l.queue_free()
+		_diff.clear()
+		_refresh()
+	elif confirm_pressed():
+		set_process(false)
+		GameState.easy = _diff_choice == 1
+		GameState.apply_settings()
+		Sfx.play("powerup")
+		GameState.new_game()
+
+
+func _refresh_difficulty() -> void:
+	for i in DIFFICULTIES.size():
+		var row: Label = _diff[i + 1]
+		var on := i == _diff_choice
+		row.text = ("> %s <" if on else "%s") % DIFFICULTIES[i][0]
+		row.add_theme_color_override("font_color", Art.c("gold") if on else Art.c("steel"))
+	_diff_desc.text = DIFFICULTIES[_diff_choice][1]
 
 
 func _refresh() -> void:

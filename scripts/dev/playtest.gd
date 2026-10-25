@@ -11,6 +11,7 @@ var rex: Rex
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameState.save_path = "user://playtest_save.cfg"
+	GameState.settings_path = "user://playtest_settings.cfg"  # leave the player's settings alone
 	GameState.skip_cards = true
 	get_tree().create_timer(480.0).timeout.connect(func():
 		print("PLAYTEST TIMED OUT")
@@ -26,6 +27,7 @@ func _run() -> void:
 	await _phase4_checks()
 	await _season_checks()
 	await _launch_checks()
+	await _easy_checks()
 	print("PLAYTEST %s (%d failed)" % ["OK" if _fails == 0 else "FAILED", _fails])
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -874,3 +876,40 @@ func _launch_checks() -> void:
 		if n is Tanya and n.mode == Tanya.Mode.CAMEO:
 			cameo = true
 	check("Tanya turns up at the exit", cameo)
+
+
+# ------------------------------------------------------------------ easy mode
+
+func _easy_checks() -> void:
+	var was := GameState.easy
+	GameState.easy = true
+	# Hits cost one pip.
+	await open_level(12)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
+	await frames(2)
+	GameState.health = 8
+	rex._invuln = 0.0
+	rex.hurt(2, rex.global_position.x + 10)
+	check("easy: a 2-damage hit costs 1 pip", GameState.health == 7)
+	# Floor 4 grunts are gentler.
+	var rat := RatDrone.new()
+	rat.position = Vector2(-1000, -1000)
+	level.add_child(rat)
+	await frames(2)
+	check("easy: Floor 4 grunts have less health", rat.hp < 4, "(hp %d)" % rat.hp)
+	# No cancellations.
+	var canceled := [false]
+	var on_cancel := func(): canceled[0] = true
+	Ratings.canceled.connect(on_cancel)
+	Ratings.value = 0.0
+	await frames(60 * 7)
+	Ratings.canceled.disconnect(on_cancel)
+	check("easy: an empty meter doesn't cancel the episode", not canceled[0])
+	# Weaker bosses.
+	await open_level(11)
+	check("easy: bosses have less health", level.boss.max_hp < 80 and level.boss.hp == level.boss.max_hp, "(%d)" % level.boss.max_hp)
+	GameState.easy = was
+	GameState.apply_settings()
+	await open_level(11)
+	check("normal: the Director is back to full strength", level.boss.max_hp == 80)

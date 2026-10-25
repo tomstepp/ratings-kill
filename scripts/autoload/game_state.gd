@@ -39,6 +39,9 @@ var music_vol := 8
 var sfx_vol := 8
 var voice_vol := 8
 var touch_mode := "auto"
+# Easy mode: every hit costs one pip, longer recovery after a hit, weaker bosses,
+# gentler grunts, slower ratings drain and no cancellations.
+var easy := false
 
 signal settings_changed
 
@@ -95,6 +98,11 @@ func is_fullscreen() -> bool:
 
 func toggle_fullscreen() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if is_fullscreen() else DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+
+## How much a hit really costs, after the difficulty setting.
+func hit_cost(amount: int) -> int:
+	return mini(amount, 1) if easy else amount
 
 
 ## Push the current settings to audio, narration and the touch buttons, and save them.
@@ -294,6 +302,8 @@ func clear_save() -> void:
 
 const SETTINGS_PATH := "user://settings.cfg"
 
+var settings_path := SETTINGS_PATH  # the automated playtest points this elsewhere
+
 
 ## The game used to be called Ratings Kill, which kept its data in another
 ## folder; carry that save and settings over the first time.
@@ -308,13 +318,14 @@ func _migrate_old_data() -> void:
 
 func _load_settings() -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(SETTINGS_PATH) == OK:
+	if cfg.load(settings_path) == OK:
 		music_on = cfg.get_value("audio", "music", true)
 		narration_on = cfg.get_value("audio", "narration", true)
 		music_vol = cfg.get_value("audio", "music_volume", 8)
 		sfx_vol = cfg.get_value("audio", "sound_volume", 8)
 		voice_vol = cfg.get_value("audio", "voice_volume", 8)
 		touch_mode = cfg.get_value("controls", "touch", "auto")
+		easy = cfg.get_value("game", "easy", false)
 
 
 func _save_settings() -> void:
@@ -325,7 +336,8 @@ func _save_settings() -> void:
 	cfg.set_value("audio", "sound_volume", sfx_vol)
 	cfg.set_value("audio", "voice_volume", voice_vol)
 	cfg.set_value("controls", "touch", touch_mode)
-	cfg.save(SETTINGS_PATH)
+	cfg.set_value("game", "easy", easy)
+	cfg.save(settings_path)
 
 
 # ------------------------------------------------------------------ input

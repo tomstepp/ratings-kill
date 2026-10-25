@@ -36,7 +36,10 @@ episode.
   first; Boom's flash stuns her), and is waiting at the exit on one level per floor
 - **How ratings work**: a cheat sheet in the pause menu; a "BORING!" nudge when the meter is low, and a red alarm
   with a countdown before a cancellation
-- **Settings** (title screen and pause menu): music, sound and voice volume, narration, fullscreen, touch buttons
+- **Easy / Normal**: picked at New Game, changeable in Settings. Easy: every hit costs one pip, longer recovery after
+  a hit, bosses with 35% less health, gentler grunts, slower ratings drain and no cancellations
+- **Settings** (title screen and pause menu): music, sound and voice volume, narration, fullscreen, touch buttons,
+  difficulty
 - **Touch controls**: on-screen d-pad, jump, shoot, flash and pause on phones and tablets (Settings can force them on
   or off); the web page asks phones to turn sideways
 - **Show layer**: Showrunner and B0-0M dialogue (narrated), 20 achievements, the break-room shop, Boom's flash-stun,

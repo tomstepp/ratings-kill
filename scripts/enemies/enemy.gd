@@ -23,11 +23,16 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1 | 16
 	_build()
-	# Grunts get tougher floor by floor (bosses are tuned by hand).
-	if not self is Boss:
-		hp = ceili(hp * (1.0 + 0.35 * GameState.difficulty()))
-	# Network HQ hits harder.
-	if GameState.difficulty() >= 3:
+	# Grunts get tougher floor by floor (bosses are tuned by hand), less so on Easy.
+	if self is Boss:
+		if GameState.easy:
+			var boss := self as Boss
+			boss.max_hp = ceili(boss.max_hp * 0.65)
+			hp = boss.max_hp
+	else:
+		hp = ceili(hp * (1.0 + (0.15 if GameState.easy else 0.35) * GameState.difficulty()))
+	# Network HQ hits harder (not on Easy, where every hit costs one pip anyway).
+	if GameState.difficulty() >= 3 and not GameState.easy:
 		contact_damage += 1
 	_stars = Art.label("*", Art.c("gold"))
 	_stars.position = Vector2(-3, -top_offset - 12)
