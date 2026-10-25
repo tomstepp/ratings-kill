@@ -52,22 +52,35 @@ body {
 }
 
 #status {
-	position: absolute;
+	position: fixed;
 	inset: 0;
 	background-color: var(--navy);
 	display: flex;
 	flex-direction: column;
-	justify-content: safe center;
 	align-items: center;
 	gap: 1rem;
 	padding: 1rem;
 	box-sizing: border-box;
 	overflow-y: auto;
+	/* The game blocks touch scrolling on the page; the start screen still needs it. */
+	touch-action: pan-y;
+	-webkit-overflow-scrolling: touch;
 	text-align: center;
+}
+
+/* Centered when it fits, scrollable from the top when it doesn't. */
+#status > :first-child {
+	margin-top: auto;
+}
+
+#status > :last-child {
+	margin-bottom: auto;
 }
 
 #status-splash {
 	width: min(90vw, 960px, calc((100vh - 15rem) * 16 / 9));
+	/* dvh is the visible height on phones (vh includes the area behind browser toolbars). */
+	width: min(90vw, 960px, calc((100dvh - 15rem) * 16 / 9));
 	min-width: 200px;
 	height: auto;
 	image-rendering: pixelated;
@@ -144,9 +157,10 @@ body {
 		gap: 0.5rem;
 	}
 	#status-splash {
-		width: min(60vw, calc((100vh - 12.5rem) * 16 / 9));
+		width: min(50vw, calc((100vh - 9rem) * 16 / 9));
+		width: min(50vw, calc((100dvh - 9rem) * 16 / 9));
 	}
-	#tagline, #size-note, #footer {
+	#tagline, #size-note, #footer, .note-detail {
 		display: none;
 	}
 	#mobile-note {
@@ -206,12 +220,12 @@ body.loading #status-progress {
 			<img id="status-splash" src="title.png" alt="Super Rex Live! title screen" width="320" height="180">
 			<p id="tagline">Rex Halloway fights his way down the Tower Below, live on galactic TV.
 				Play to the audience: style raises your ratings, and ratings pay.</p>
-			<div id="mobile-note">
-				<strong>Playing on a phone or tablet?</strong><br>
-				Turn it sideways. Touch buttons appear on screen: the d-pad on the left,
-				A to jump, B to shoot, and the drone's flash above them.
-			</div>
 			<button id="play" type="button">PLAY</button>
+			<div id="mobile-note">
+				<strong>Touch buttons appear on screen.</strong>
+				<span class="note-detail"><br>The d-pad is on the left; A jumps, B shoots, and the drone's flash is
+					above them. Hold your phone sideways.</span>
+			</div>
 			<p id="size-note">About a 40&nbsp;MB download (use Wi-Fi on a phone). Works in Chrome, Firefox, Edge and Safari.</p>
 			<progress id="status-progress"></progress>
 			<div id="status-notice"></div>
