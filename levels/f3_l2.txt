@@ -3,6 +3,7 @@ floor: 3
 music: music_backlot
 intro: showrunner|Level two: the Western Town! Cowboys, tumbleweeds, and a frankly irresponsible amount of rigging.
 intro: boom|The rooftop belts are moving scenery tracks. They'll walk you right off the edge if you let them.
+tanya: I've shot this set twice already. Mind the tumbleweeds, rookie.
 hint: showrunner|The yellow keycard's on the saloon roof. The scenery belt pushes you back. Run, cowboy.
 hint: boom|Yellow door. Hope you got the card off the saloon roof. I'm not going back up there.
 hint: showrunner|Red door. The red keycard's up the water tower. Climb the general store first.

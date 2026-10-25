@@ -6,6 +6,7 @@ const SPEAKERS := {
 	"showrunner": {"name": "THE SHOWRUNNER", "portrait": 0, "color": "magenta", "pitch": 1.25},
 	"boom": {"name": "B0-0M", "portrait": 1, "color": "cyan", "pitch": 1.7},
 	"rex": {"name": "REX HALLOWAY", "portrait": 2, "color": "gold", "pitch": 0.8},
+	"tanya": {"name": "TANYA VOSS", "portrait": 3, "color": "lime", "pitch": 1.35},
 }
 const CHARS_PER_SEC := 45.0
 const LINE_CHARS := 45
@@ -30,6 +31,7 @@ const ACHIEVEMENTS := {
 	"director": {"title": "DIRECTOR'S CUT", "reward": 2000},
 	"finale": {"title": "SERIES FINALE", "reward": 5000},
 	"grade_s": {"title": "MUST-SEE TV", "reward": 750},
+	"rival": {"title": "RIVALRY RATINGS", "reward": 500},
 }
 
 var unlocked := {}

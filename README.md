@@ -32,11 +32,18 @@ episode.
   firepower upgrades fan out instead of stacking on one target, enemies get faster and shoot more often, the meter drains faster, shop prices rise, and
   Network HQ hits harder
 - **Saving**: progress saves after every level; Continue on the title screen resumes in the break room
-- **Show layer**: Showrunner and B0-0M dialogue (narrated), 19 achievements, the break-room shop, Boom's flash-stun,
+- **Tanya Voss**: the rival contestant drops in to race Rex to sponsor crates (and steals them if she gets there
+  first; Boom's flash stuns her), and is waiting at the exit on one level per floor
+- **How ratings work**: a cheat sheet in the pause menu; a "BORING!" nudge when the meter is low, and a red alarm
+  with a countdown before a cancellation
+- **Settings** (title screen and pause menu): music, sound and voice volume, narration, fullscreen, touch buttons
+- **Touch controls**: on-screen d-pad, jump, shoot, flash and pause on phones and tablets (Settings can force them on
+  or off); the web page asks phones to turn sideways
+- **Show layer**: Showrunner and B0-0M dialogue (narrated), 20 achievements, the break-room shop, Boom's flash-stun,
   Rex's quips with QUIP COMBO bonuses
 - Title screen, pause menu, end-of-floor and end-of-season cards, music per floor and per boss
 
-Not built yet: Tanya Voss cameos. Cut levels (*Rush Hour Ruins*, and the original *Express Line* and *Last Stop*, now
+Cut levels (*Rush Hour Ruins*, and the original *Express Line* and *Last Stop*, now
 reworked for Floor 2) are kept in `levels/cut/`.
 
 ## Controls
@@ -49,7 +56,7 @@ reworked for Floor 2) are kept in `levels/cut/`.
 | Doors, levers, exit | Up / W / E | D-pad up / B |
 | Drop through grate | Down (or Down + Jump) | D-pad down |
 | Boom's flash-stun | C / L | Y |
-| Pause (Q to quit while paused) | Esc / P | Start |
+| Pause menu (resume, settings, how ratings work, controls, quit) | Esc / P | Start |
 | Fullscreen | F | |
 | Music on/off | M | |
 | Narration on/off | N | |
@@ -70,6 +77,8 @@ Dev shortcuts (arguments after `--`):
 /Applications/Godot.app/Contents/MacOS/Godot --path . -- --level=7        # jump to an episode (0-15; every 4th is a boss)
 /Applications/Godot.app/Contents/MacOS/Godot --path . -- --room=test_room  # movement sandbox
 /Applications/Godot.app/Contents/MacOS/Godot --path . -- --screen=break   # break room with $2500
+/Applications/Godot.app/Contents/MacOS/Godot --path . -- --level=11 --firepower=4  # start with maxed firepower
+/Applications/Godot.app/Contents/MacOS/Godot --path . -- --level=1 --touch --tanya # touch buttons, Tanya race
 /Applications/Godot.app/Contents/MacOS/Godot --headless --path . -- --test # automated mechanics checks
 ```
 
@@ -110,13 +119,13 @@ After changing art or audio, re-run the generator and then `Godot --headless --p
 
 ```
 scripts/
-  autoload/   art, sfx, game_state, ratings, narrator, showrunner
+  autoload/   art, sfx, game_state, ratings, narrator, showrunner, touch (on-screen buttons)
   player/     rex (movement, quips), boom (drone), bolt
   enemies/    enemy base, rat_drone, spark_bot, security_bot, mannequin, mic_drone, exec_drone, enemy_bolt,
               boss base, mascot, floor_manager, director, finale, shockwave, confetti_bomb, clipboard
   pickups/    pickup, crate, tv_block, sponsor_crate
   world/      level (map loader + show events), door, exit_door, lever, mover (lifts, sliders, cranes), rail,
-              laser_gate, trigger_zone (hints, secrets, spotlight cues), stage_light
-  ui/         hud, title_screen, level_card, break_room, end_card
+              laser_gate, trigger_zone (hints, secrets, spotlight cues), stage_light, tanya (the rival)
+  ui/         hud (and pause menu), title_screen, level_card, break_room, end_card, credits, settings_menu
   dev/        dev_tools (screenshots, input bot), playtest (automated checks)
 ```

@@ -57,7 +57,7 @@ body {
 	background-color: var(--navy);
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: safe center;
 	align-items: center;
 	gap: 1rem;
 	padding: 1rem;
@@ -68,7 +68,7 @@ body {
 
 #status-splash {
 	width: min(90vw, 960px, calc((100vh - 15rem) * 16 / 9));
-	min-width: 280px;
+	min-width: 200px;
 	height: auto;
 	image-rendering: pixelated;
 	border: 2px solid var(--midnight);
@@ -113,13 +113,53 @@ body {
 #mobile-note {
 	display: none;
 	max-width: 28rem;
-	border: 2px solid var(--red);
+	border: 2px solid var(--cyan);
 	padding: 0.75rem 1rem;
 	line-height: 1.5;
 }
 
 #mobile-note strong {
 	color: var(--gold);
+}
+
+#rotate {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 10;
+	background: var(--navy);
+	color: var(--gold);
+	font-weight: bold;
+	font-size: 1.2rem;
+	text-align: center;
+	padding: 2rem;
+	box-sizing: border-box;
+	justify-content: center;
+	align-items: center;
+}
+
+/* Short screens (phones held sideways): keep the essentials on one screen. */
+@media (max-height: 500px) {
+	#status {
+		gap: 0.5rem;
+	}
+	#status-splash {
+		width: min(60vw, calc((100vh - 12.5rem) * 16 / 9));
+	}
+	#tagline, #size-note, #footer {
+		display: none;
+	}
+	#mobile-note {
+		padding: 0.4rem 0.75rem;
+		font-size: 0.85rem;
+	}
+}
+
+/* Phones in portrait: the game is landscape, so ask for a turn. */
+@media (orientation: portrait) and (pointer: coarse) {
+	#rotate {
+		display: flex;
+	}
 }
 
 #status-progress {
@@ -158,17 +198,19 @@ body.loading #status-progress {
 			Super Rex Live! needs JavaScript to run.
 		</noscript>
 
+		<div id="rotate">Turn your device sideways to play.</div>
+
 		<div id="status">
 			<img id="status-splash" src="title.png" alt="Super Rex Live! title screen" width="320" height="180">
 			<p id="tagline">Rex Halloway fights his way down the Tower Below, live on galactic TV.
 				Play to the audience: style raises your ratings, and ratings pay.</p>
 			<div id="mobile-note">
-				<strong>Keyboard or controller needed.</strong><br>
-				Super Rex Live! doesn't have touch controls yet, so it won't play on a phone or tablet.
-				Come back on a computer, or press Play anyway if you have a keyboard or controller connected.
+				<strong>Playing on a phone or tablet?</strong><br>
+				Turn it sideways. Touch buttons appear on screen: the d-pad on the left,
+				A to jump, B to shoot, and the drone's flash above them.
 			</div>
 			<button id="play" type="button">PLAY</button>
-			<p id="size-note">About a 40&nbsp;MB download. Works best in Chrome, Firefox, Edge or Safari on a computer.</p>
+			<p id="size-note">About a 40&nbsp;MB download (use Wi-Fi on a phone). Works in Chrome, Firefox, Edge and Safari.</p>
 			<progress id="status-progress"></progress>
 			<div id="status-notice"></div>
 			<p id="footer">Arrows/WASD move &middot; Space jump &middot; X shoot &middot; Esc pause<br>
@@ -188,11 +230,10 @@ const engine = new Engine(GODOT_CONFIG);
 	const statusNotice = document.getElementById('status-notice');
 	const playButton = document.getElementById('play');
 
-	// Touch-only devices (phones, most tablets) get a heads-up before the download.
+	// Touch-only devices (phones, most tablets) get a quick how-to before the download.
 	const touchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches;
 	if (touchOnly) {
 		document.getElementById('mobile-note').style.display = 'block';
-		playButton.textContent = 'PLAY ANYWAY';
 	}
 
 	function setStatusNotice(text) {

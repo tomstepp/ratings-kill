@@ -25,6 +25,7 @@ func _run() -> void:
 	await _show_checks()
 	await _phase4_checks()
 	await _season_checks()
+	await _launch_checks()
 	print("PLAYTEST %s (%d failed)" % ["OK" if _fails == 0 else "FAILED", _fails])
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -654,7 +655,9 @@ func _season_checks() -> void:
 	var canceled := [false]
 	Ratings.canceled.connect(func(): canceled[0] = true, CONNECT_ONE_SHOT)
 	Ratings.value = 0.0
-	await frames(60 * 7)
+	await frames(60 * 3)
+	check("the cancellation alarm shows while the meter is empty", level.hud._alarm[0].visible and level.hud._cancel.visible)
+	await frames(60 * 4)
 	check("an empty meter cancels the episode on floor 3", canceled[0])
 	await frames(200)
 
@@ -745,3 +748,129 @@ func _season_checks() -> void:
 	await use_exit()
 	await frames(300)
 	check("the last boss ends the season", screen_is(EndCard) and not GameState.has_save())
+
+
+# ------------------------------------------------------------------ settings, touch, Tanya
+
+func _launch_checks() -> void:
+	# Settings: volumes reach the audio buses and survive a reload.
+	var saved := [GameState.music_vol, GameState.sfx_vol, GameState.voice_vol, GameState.touch_mode, GameState.music_on]
+	GameState.music_vol = 3
+	GameState.sfx_vol = 0
+	GameState.music_on = true
+	GameState.apply_settings()
+	var music_db := AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Music"))
+	check("music volume sets the Music bus", absf(music_db - linear_to_db(0.3)) < 0.1, "(%.1f dB)" % music_db)
+	check("sound volume 0 mutes sound effects", AudioServer.is_bus_mute(AudioServer.get_bus_index("SFX")))
+	GameState.music_vol = 0
+	GameState._load_settings()
+	check("settings are saved", GameState.music_vol == 3 and GameState.sfx_vol == 0)
+
+	# The pause menu opens the ratings cheat sheet and the settings.
+	await open_level(0)
+	level.hud.set_paused(true)
+	await frames(2)
+	for i in 2:
+		Input.action_press("move_down")
+		await frames(2)
+		Input.action_release("move_down")
+		await frames(2)
+	Input.action_press("jump")
+	await frames(2)
+	Input.action_release("jump")
+	await frames(2)
+	check("pause menu opens HOW RATINGS WORK", is_instance_valid(level.hud._pause_page) and not level.hud._pause_page is SettingsMenu)
+	Input.action_press("pause")
+	await frames(2)
+	Input.action_release("pause")
+	await frames(2)
+	check("Esc goes back to the pause menu", level.hud._pause_page == null and get_tree().paused)
+	Input.action_press("move_up")
+	await frames(2)
+	Input.action_release("move_up")
+	await frames(2)
+	Input.action_press("jump")
+	await frames(2)
+	Input.action_release("jump")
+	await frames(2)
+	check("pause menu opens SETTINGS", level.hud._pause_page is SettingsMenu)
+	level.hud.set_paused(false)
+	await frames(2)
+	check("resume unpauses", not get_tree().paused)
+
+	# Touch buttons press the same actions as the keyboard.
+	GameState.touch_mode = "on"
+	GameState.apply_settings()
+	check("touch buttons show when turned on", Touch.visible)
+	var jump_button: TouchScreenButton = Touch.buttons[4]
+	var touch := InputEventScreenTouch.new()
+	touch.index = 0
+	touch.pressed = true
+	touch.position = Touch.get_viewport().get_final_transform() * (jump_button.position + Vector2(12, 12))
+	Input.parse_input_event(touch)
+	await frames(2)
+	var held := Input.is_action_pressed("jump")
+	touch.pressed = false
+	Input.parse_input_event(touch)
+	await frames(2)
+	check("the A button jumps", held and not Input.is_action_pressed("jump"))
+	GameState.touch_mode = "off"
+	GameState.apply_settings()
+	check("touch buttons hide when turned off", not Touch.visible)
+
+	GameState.music_vol = saved[0]
+	GameState.sfx_vol = saved[1]
+	GameState.voice_vol = saved[2]
+	GameState.touch_mode = saved[3]
+	GameState.music_on = saved[4]
+	GameState.apply_settings()
+
+	# Tanya steals a crate Rex isn't racing for...
+	await open_level(0)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
+	await place_rex(Vector2i(4, 19))
+	var crate := SponsorCrate.new()
+	crate.position = Vector2(26 * 16 + 8, 18 * 16)
+	level.add_child(crate)
+	var tanya := level.send_tanya(crate)
+	for i in 600:
+		await frames(1)
+		if not is_instance_valid(crate):
+			break
+	check("Tanya steals a crate Rex doesn't reach", not is_instance_valid(crate) and is_instance_valid(tanya) and tanya.mode == Tanya.Mode.DONE)
+	await frames(150)
+
+	# ...and loses one Rex grabs first.
+	Showrunner.unlocked.erase("rival")
+	crate = SponsorCrate.new()
+	crate.position = rex.global_position + Vector2(0, -40)
+	level.add_child(crate)
+	tanya = level.send_tanya(crate)
+	for i in 300:
+		await frames(1)
+		if not is_instance_valid(crate):
+			break
+	await frames(5)
+	check("beating Tanya to a drop earns the rivalry bonus", Showrunner.unlocked.has("rival"))
+
+	# Boom's flash stuns her.
+	var t2 := Tanya.new()
+	t2.position = rex.global_position + Vector2(30, 0)
+	level.add_child(t2)
+	await frames(2)
+	level.boom.cooldown = 0.0
+	level.boom.global_position = rex.global_position
+	level.boom.flash()
+	check("Boom's flash stuns Tanya", t2.stunned > 0.0)
+	t2.queue_free()
+
+	# She's waiting at the exit on some levels.
+	await open_level(1)
+	rex.global_position = level._exit_pos + Vector2(-60, 0)
+	await frames(5)
+	var cameo := false
+	for n in level.get_children():
+		if n is Tanya and n.mode == Tanya.Mode.CAMEO:
+			cameo = true
+	check("Tanya turns up at the exit", cameo)

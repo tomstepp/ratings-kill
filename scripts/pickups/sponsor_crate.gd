@@ -66,6 +66,25 @@ func _physics_process(delta: float) -> void:
 				_open(b)
 
 
+func is_opened() -> bool:
+	return _opened
+
+
+func is_landed() -> bool:
+	return _landed
+
+
+## Tanya got here first.
+func steal() -> void:
+	_opened = true
+	Sfx.play("crate", 0.8)
+	var level = GameState.level
+	if level:
+		level.burst(global_position + Vector2(0, -8), Art.c("lime"), 14, 80.0)
+		level.float_text(global_position + Vector2(0, -24), "STOLEN!", Art.c("red"))
+	queue_free()
+
+
 func _open(rex: Rex) -> void:
 	_opened = true
 	var item: Dictionary = _choose()

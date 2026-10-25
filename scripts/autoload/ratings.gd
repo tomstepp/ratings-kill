@@ -34,6 +34,17 @@ const GRADE_LINES := {
 	"D": "Those ratings were a disaster. Back to the break room.",
 }
 
+## What fills (and drains) the meter, for the "HOW RATINGS WORK" page.
+const HELP := [
+	["SECRET AREA", "+25", "QUIP COMBO", "+10"],
+	["NO HITS FOR 25 SEC", "+10", "STOMP CHAIN, EACH", "+6"],
+	["STUNNED TAKEDOWN", "+9", "FLASH 3+ FOES", "+8"],
+	["STOMP", "+7", "TAKEDOWN", "+6"],
+	["UPGRADE", "+5", "KEYCARD", "+4"],
+	["SHOOT DOWN A SHOT", "+3", "OPEN A DOOR", "+3"],
+	["BEAT TANYA TO DROP", "+10", "CRATE OR TV BLOCK", "+2"],
+]
+
 var value := START
 var active := false
 var drops := 0

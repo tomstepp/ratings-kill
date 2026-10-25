@@ -23,7 +23,17 @@ func _ready() -> void:
 		_pool.append(p)
 	_music = AudioStreamPlayer.new()
 	add_child(_music)
-	apply_music_setting.call_deferred()
+	# Separate buses so the settings menu can set music and sound levels.
+	for bus in ["Music", "SFX"]:
+		if AudioServer.get_bus_index(bus) == -1:
+			AudioServer.add_bus()
+			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
+			AudioServer.set_bus_send(AudioServer.bus_count - 1, "Master")
+	_music.bus = "Music"
+	_music.volume_db = MUSIC_DB
+	for p in _pool:
+		p.bus = "SFX"
+	apply_volumes.call_deferred()
 
 
 func stop_all() -> void:
@@ -33,8 +43,16 @@ func stop_all() -> void:
 	_music_name = ""
 
 
-func apply_music_setting() -> void:
-	_music.volume_db = MUSIC_DB if GameState.music_on else -80.0
+## Settings -> bus levels (volume 0 mutes; M mutes music on its own).
+func apply_volumes() -> void:
+	_set_bus("Music", GameState.music_vol if GameState.music_on else 0)
+	_set_bus("SFX", GameState.sfx_vol)
+
+
+func _set_bus(bus: String, level: int) -> void:
+	var i := AudioServer.get_bus_index(bus)
+	AudioServer.set_bus_mute(i, level <= 0)
+	AudioServer.set_bus_volume_db(i, linear_to_db(level / 10.0) if level > 0 else -80.0)
 
 
 func play(sound: String, pitch := 1.0, volume_db := 0.0) -> void:

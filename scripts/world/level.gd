@@ -48,6 +48,9 @@ var _fg: TileMapLayer
 var _shake := 0.0
 var _complete := false
 var _boss_exit := Vector2.ZERO
+var _exit_pos := Vector2.INF
+var _tanya_cameo_done := false
+const TANYA_RACE_CHANCE := 0.5
 
 
 func load_layout(path: String) -> void:
@@ -146,6 +149,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	if is_instance_valid(rex) and rex.state != Rex.State.DEAD:
 		camera.global_position = rex.global_position + Vector2(rex.facing * 28.0, -28.0)
+	_check_tanya_cameo()
 	if _shake > 0.0:
 		_shake = maxf(0.0, _shake - delta * 12.0)
 		camera.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake)).round()
@@ -323,6 +327,7 @@ func _spawn_entities() -> void:
 					_add(tv, center)
 				"E":
 					_add(ExitDoor.new(), feet)
+					_exit_pos = feet
 				"e":
 					_boss_exit = feet
 				"M":
@@ -555,6 +560,42 @@ func _on_sponsor_drop() -> void:
 	var crate := SponsorCrate.new()
 	crate.position = ceiling_above(spot, 6) + Vector2(0, 8)
 	add_child.call_deferred(crate)  # may be triggered from inside a physics callback
+	# From Level 2 on (not in boss fights), Tanya may race Rex for it.
+	if GameState.level_index >= 1 and not is_instance_valid(boss) and randf() < TANYA_RACE_CHANCE:
+		send_tanya(crate)
+
+
+## Tanya drops in on the far side of the crate and races Rex to it.
+func send_tanya(crate: SponsorCrate) -> Tanya:
+	var side := signf(crate.position.x - rex.global_position.x)
+	if side == 0.0:
+		side = 1.0
+	var spot := crate.position
+	for dx in [side * 88.0, side * 56.0, -side * 88.0]:
+		if is_empty(_cell_at(crate.position + Vector2(dx, 0))):
+			spot = crate.position + Vector2(dx, 0)
+			break
+	var t := Tanya.new()
+	t.race(crate)
+	t.position = ceiling_above(spot, 4) + Vector2(0, 8)
+	add_child.call_deferred(t)
+	Showrunner.say("Oh! Here comes Tanya Voss! It's a RACE for the sponsor drop!", "showrunner", true)
+	return t
+
+
+## On levels with a `tanya:` line, she's waiting at the exit when Rex gets near.
+func _check_tanya_cameo() -> void:
+	if _tanya_cameo_done or not _meta.has("tanya") or _exit_pos == Vector2.INF or not is_instance_valid(rex):
+		return
+	var d := rex.global_position - _exit_pos
+	if absf(d.x) < 120.0 and absf(d.y) < 40.0:
+		_tanya_cameo_done = true
+		var t := Tanya.new()
+		t.mode = Tanya.Mode.CAMEO
+		t.cameo_line = _meta.tanya
+		t.position = _exit_pos + Vector2(-signf(d.x) * 12.0, 0)
+		t.facing = 1 if d.x > 0.0 else -1
+		add_child(t)
 
 
 func _on_boredom() -> void:

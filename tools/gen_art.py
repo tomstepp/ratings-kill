@@ -708,7 +708,29 @@ def gen_portraits():
         "...RRRRRRRWWRRRRRRR.....",
     ], 0, 2)
     rex.outline()
-    save(strip([show, boom, rex]), os.path.join(SPRITES, "portraits.png"))
+    tanya = Canvas(24, 24)
+    tanya.ascii([
+        "",
+        "......MMMMMMMM..........",
+        ".....MMMMMMMMMMM........",
+        "....MMMMMMMMMMMMM.......",
+        "...MMMFFFFFFFFFMM.......",
+        "...MMFFFFFFFFFFFM.......",
+        "..MMMFFFFFFFFFFFF.......",
+        "..MMMFFKKFFFKKFFF.......",
+        "..MMMFFWCFFFWCFFF.......",
+        ".MMM.FFFFFFFFFFFF.......",
+        ".MM..FFFFFFFFFFFF.......",
+        ".MM...FFFFRRRFFF........",
+        ".M.....FFFFFFFF.........",
+        "........FFFFFF..........",
+        "......GGGGFFGGGG........",
+        "....GGGGGGggGGGGGG......",
+        "...GGGGGGGggGGGGGGG.....",
+        "...GGGGGGGggGGGGGGG.....",
+    ], 0, 2)
+    tanya.outline()
+    save(strip([show, boom, rex, tanya]), os.path.join(SPRITES, "portraits.png"))
 
 
 # ------------------------------------------------------------------------ UI
@@ -1179,6 +1201,79 @@ def gen_bosses():
          os.path.join(SPRITES, "finale.png"))
 
 
+# ------------------------------------------------------------ Tanya Voss (rival)
+
+TANYA_HEAD = [
+    "",
+    ".....MMMMM......",
+    "....MMMMMMMM....",
+    "...MMMMMMMMMM...",
+    "...MMFFFFFFM....",
+    "..MMFFFFFFFF....",
+    "..MMFFMFFMFF....",
+    "..MMFFFFFFFF....",
+    ".MMMFFFFRRFF....",
+    ".MM..FFFFFF.....",
+    ".M....FFFF......",
+    "......FFFF......",
+]
+TANYA_TORSO = [
+    ".....GGGGGG.....",
+    "....GGGgGGGGG...",
+    "....GGGgGGGGG...",
+    "...FGGGgGGGGGF..",
+    "...FGGGgGGGGGF..",
+    "....GGGgGGGGG...",
+    "....GGGGGGGGG...",
+    "....SSSYYSSS....",
+    "....PPPPPPPP....",
+]
+
+
+def tanya_frame(legs, bob=0, cheer=False):
+    """Tanya Voss, fan-favorite contestant: pine-green racing jacket, ponytail."""
+    c = Canvas(16, 32)
+    c.ascii(TANYA_HEAD, 0, bob)
+    torso = list(TANYA_TORSO)
+    if cheer:
+        torso[3] = "...FGGGgGGGGG..."
+        torso[4] = "....GGGgGGGGG..."
+        c.ascii(["..F", "..F", ".FF"], 12, 9 + bob)
+    c.ascii(torso, 0, 12 + bob)
+    leg_rows = [r.replace("T", "P").replace("N", "K") for r in REX_LEGS[legs]]
+    c.ascii(leg_rows, 0, 21 + bob)
+    return c.outline()
+
+
+def gen_tanya():
+    frames = [tanya_frame("stand"), tanya_frame("stride"), tanya_frame("pass", 1),
+              tanya_frame("stride2"), tanya_frame("stand", 0, True)]
+    save(strip(frames), os.path.join(SPRITES, "tanya.png"))
+
+
+# --------------------------------------------------------- Touch-screen buttons
+
+def gen_touch():
+    """24x24 round buttons: left, right, up, down, jump (A), shoot (B), flash, pause."""
+    def button(symbol, rim="L", fill="S"):
+        c = Canvas(24, 24)
+        c.ellipse(11.5, 11.5, 11.5, 11.5, CH["K"])
+        c.ellipse(11.5, 11.5, 10.5, 10.5, CH[rim])
+        c.ellipse(11.5, 11.5, 9.5, 9.5, CH[fill])
+        c.ascii(symbol, 12 - len(symbol[0]) // 2, 12 - len(symbol) // 2)
+        return c
+    arrow = ["...W...", "..WWW..", ".WWWWW.", "WWWWWWW", "..WWW..", "..WWW.."]
+    up = button(arrow)
+    down = button(list(reversed(arrow)))
+    right = button(["..W...", "..WW..", "WWWWW.", "WWWWWW", "WWWWW.", "..WW..", "..W..."])
+    left = button(["...W..", "..WW..", ".WWWWW", "WWWWWW", ".WWWWW", "..WW..", "...W.."])
+    jump = button(["..WWW..", ".W...W.", ".W...W.", ".WWWWW.", ".W...W.", ".W...W."], "Y", "O")
+    shoot = button(["WWWW..", "W...W.", "WWWW..", "W...W.", "W...W.", "WWWW.."], "C", "T")
+    flash = button(["..WWW..", ".WCCCW.", "WCCWCCW", "WCWWWCW", "WCCWCCW", ".WCCCW.", "..WWW.."], "C", "P")
+    pause = button(["WW.WW", "WW.WW", "WW.WW", "WW.WW", "WW.WW"])
+    save(strip([left, right, up, down, jump, shoot, flash, pause]), os.path.join(SPRITES, "touch.png"))
+
+
 # ---------------------------------------------------------------------- Font
 
 FONT = {
@@ -1248,5 +1343,7 @@ if __name__ == "__main__":
     gen_mannequin()
     gen_drones()
     gen_bosses()
+    gen_tanya()
+    gen_touch()
     gen_font()
     print("art generated")

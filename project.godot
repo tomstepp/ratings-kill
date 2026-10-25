@@ -26,6 +26,7 @@ GameState="*res://scripts/autoload/game_state.gd"
 Ratings="*res://scripts/autoload/ratings.gd"
 Narrator="*res://scripts/autoload/narrator.gd"
 Showrunner="*res://scripts/autoload/showrunner.gd"
+Touch="*res://scripts/autoload/touch.gd"
 
 [audio]
 

@@ -38,11 +38,11 @@ func _ready() -> void:
 		var name: String = Level.read_header(GameState.LEVELS[saved]).get("name", "")
 		_add_option("continue", "CONTINUE: %s %s" % [GameState.level_label(saved).replace("FLOOR ", "F").replace(" - LEVEL ", "-L").replace(" - BOSS", " BOSS"), name.to_upper()])
 	_add_option("new", "NEW GAME" if saved > 0 else "GO ON AIR (NEW GAME)")
+	_add_option("settings", "SETTINGS")
 	_add_option("credits", "CREDITS")
 	_refresh()
-	centered("ARROWS MOVE  SPACE JUMP  X SHOOT", 146, Art.c("steel"))
-	centered("C DRONE FLASH  UP DOORS  ESC PAUSE", 157, Art.c("steel"))
-	centered("F FULLSCREEN  M MUSIC  N NARRATION", 168, Art.c("metal"))
+	centered("ARROWS MOVE  SPACE JUMP  X SHOOT", 156, Art.c("steel"))
+	centered("C DRONE FLASH  UP DOORS  ESC PAUSE", 167, Art.c("metal"))
 	scanlines()
 	Sfx.music("music_title")
 
@@ -66,6 +66,9 @@ func _process(delta: float) -> void:
 			"credits":
 				Sfx.play("blip", 0.8)
 				GameState.main.show_credits()
+			"settings":
+				Sfx.play("blip", 0.8)
+				GameState.main.show_settings()
 			"continue":
 				Sfx.play("powerup")
 				if not GameState.continue_game():

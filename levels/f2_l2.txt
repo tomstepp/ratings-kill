@@ -3,6 +3,7 @@ floor: 2
 music: music_mall
 intro: showrunner|Level two: the Department Store! Everything must go. Including, possibly, you.
 intro: boom|The mannequins move when you're not looking. I checked the footage. I wish I hadn't.
+tanya: Mall security's got nothing on me. See you downstairs, Halloway!
 hint: showrunner|Mannequins freeze while you face them. Turn your back and they come running. Like fans!
 hint: showrunner|Yellow door. The yellow keycard's upstairs in Home Goods, past the escalator belt.
 hint: boom|Red door. Red keycard is up in Electronics with a turret. Zap first, browse later.

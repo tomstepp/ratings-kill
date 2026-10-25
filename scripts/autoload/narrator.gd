@@ -8,6 +8,7 @@ const STYLE := {
 	# Boom is a small drone: a bright, higher voice, a little louder than the rest.
 	"boom": {"prefer": ["Junior", "Kathy", "Google US English", "Zira", "Fred"], "pitch": 1.7, "rate": 1.2, "volume": 100},
 	"rex": {"prefer": ["Rocko", "Reed", "Daniel", "Alex", "Tom", "Aaron", "Google UK English Male", "Guy", "David"], "pitch": 0.8, "rate": 1.05},
+	"tanya": {"prefer": ["Tessa", "Victoria", "Moira", "Serena", "Google UK English Female", "Sonia", "Libby", "Jenny"], "pitch": 1.05, "rate": 1.2},
 }
 const VOLUME := 85
 
@@ -26,7 +27,7 @@ func _ready() -> void:
 
 ## Speak a line. Returns false if narration is off or unavailable.
 func speak(text: String, speaker: String, interrupt := false) -> bool:
-	if not available or not GameState.narration_on:
+	if not available or not GameState.narration_on or GameState.voice_vol <= 0:
 		return false
 	if _voices.is_empty():
 		# Browsers load their voice list late, so try again on first use.
@@ -34,7 +35,8 @@ func speak(text: String, speaker: String, interrupt := false) -> bool:
 		if _voices.is_empty():
 			return false
 	var style: Dictionary = STYLE[speaker]
-	DisplayServer.tts_speak(_spoken(text), _voices[speaker], style.get("volume", VOLUME), style.pitch, style.rate, 0, interrupt)
+	var volume := int(style.get("volume", VOLUME) * GameState.voice_vol / 10.0)
+	DisplayServer.tts_speak(_spoken(text), _voices[speaker], volume, style.pitch, style.rate, 0, interrupt)
 	return true
 
 

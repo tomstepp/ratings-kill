@@ -10,6 +10,7 @@ name: Platform Zero            # shown on the title card, in the break room and 
 floor: 1                       # 1-4: picks the tile set (subway, mall, backlot, hq)
 music: music_level2            # optional; a track in assets/audio (default music_level)
 boss: manager                  # boss levels only: mascot, manager, director or finale
+tanya: See you downstairs!     # optional; Tanya Voss waits at the exit and says this when Rex gets close
 intro: showrunner|Hello!       # dialogue at level start (speaker: showrunner, boom or rex)
 hint: boom|Psst.               # one per T in the map, in reading order (left-to-right, top-to-bottom)
 ; comment lines start with a semicolon

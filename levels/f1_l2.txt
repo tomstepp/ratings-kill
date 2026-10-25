@@ -3,6 +3,8 @@ floor: 1
 music: music_level2
 intro: showrunner|Level two! A maintenance shaft. The union says it's 'mostly' up to code.
 intro: boom|Up is the only way out. I'd fly you, but I'm a camera, not a taxi.
+intro: showrunner|Also on tonight's show: fan favorite Tanya Voss! She's always one step ahead. Literally.
+tanya: Fancy meeting you here, Halloway. I'm already through. Try to keep up!
 hint: showrunner|The yellow door! If you skipped the yellow keycard, it's back down on the left. Cardio!
 hint: showrunner|That platform slides. Time your jump, or become a cautionary tale.
 hint: boom|The yellow keycard is way up on the left. Bring snacks.

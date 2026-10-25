@@ -54,6 +54,10 @@ func flash() -> void:
 		if e.global_position.distance_to(global_position) <= STUN_RADIUS:
 			e.stun(STUN_TIME)
 			hit += 1
+	# Tanya too: fair's fair on live TV.
+	for t in get_tree().get_nodes_in_group("rivals"):
+		if t.global_position.distance_to(global_position) <= STUN_RADIUS:
+			t.stun(STUN_TIME)
 	if GameState.level:
 		GameState.level.flash_screen()
 	if hit >= 3:

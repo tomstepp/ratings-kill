@@ -75,6 +75,10 @@ func show_card(i: int) -> void:
 	_swap(card)
 
 
+func show_settings() -> void:
+	_swap(SettingsScreen.new())
+
+
 func show_credits() -> void:
 	_swap(Credits.new())
 

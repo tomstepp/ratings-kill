@@ -33,6 +33,14 @@ var stats := {"wall_bumps": 0, "jumps": 0, "shots": 0, "crates": 0, "sodas": 0, 
 var damage_this_level := 0
 var music_on := true
 var narration_on := true
+# Settings menu: volumes 0-10, and whether on-screen touch buttons show
+# ("auto" shows them on touchscreens only).
+var music_vol := 8
+var sfx_vol := 8
+var voice_vol := 8
+var touch_mode := "auto"
+
+signal settings_changed
 
 var skip_cards := false  # the automated playtest goes straight into levels
 
@@ -71,18 +79,31 @@ func quit_game() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_music"):
 		music_on = not music_on
-		Sfx.apply_music_setting()
 		Showrunner.notice("MUSIC ON" if music_on else "MUSIC OFF")
-		_save_settings()
+		apply_settings()
 	elif event.is_action_pressed("toggle_narration"):
 		narration_on = not narration_on
-		if not narration_on:
-			Narrator.stop()
 		Showrunner.notice("NARRATION ON" if narration_on else "NARRATION OFF")
-		_save_settings()
+		apply_settings()
 	if event.is_action_pressed("fullscreen"):
-		var mode := DisplayServer.window_get_mode()
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if mode == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		toggle_fullscreen()
+
+
+func is_fullscreen() -> bool:
+	return DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
+
+
+func toggle_fullscreen() -> void:
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if is_fullscreen() else DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+
+## Push the current settings to audio, narration and the touch buttons, and save them.
+func apply_settings() -> void:
+	Sfx.apply_volumes()
+	if not narration_on:
+		Narrator.stop()
+	settings_changed.emit()
+	_save_settings()
 
 
 # ------------------------------------------------------------------ flow
@@ -290,12 +311,20 @@ func _load_settings() -> void:
 	if cfg.load(SETTINGS_PATH) == OK:
 		music_on = cfg.get_value("audio", "music", true)
 		narration_on = cfg.get_value("audio", "narration", true)
+		music_vol = cfg.get_value("audio", "music_volume", 8)
+		sfx_vol = cfg.get_value("audio", "sound_volume", 8)
+		voice_vol = cfg.get_value("audio", "voice_volume", 8)
+		touch_mode = cfg.get_value("controls", "touch", "auto")
 
 
 func _save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "music", music_on)
 	cfg.set_value("audio", "narration", narration_on)
+	cfg.set_value("audio", "music_volume", music_vol)
+	cfg.set_value("audio", "sound_volume", sfx_vol)
+	cfg.set_value("audio", "voice_volume", voice_vol)
+	cfg.set_value("controls", "touch", touch_mode)
 	cfg.save(SETTINGS_PATH)
 
 

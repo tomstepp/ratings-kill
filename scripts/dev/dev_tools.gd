@@ -4,6 +4,9 @@ extends Node
 ##   --bot           hold right, hop and shoot: a crude smoke-test player
 ##   --god           Rex can't lose health
 ##   --firepower=N   with --level, start with N shots per trigger pull (handled in main.gd)
+##   --touch         show the touch buttons (without saving the setting)
+##   --pause=PAGE    after 4.5s (past the title card), pause and open a page: menu, ratings, controls or settings
+##   --tanya         after 4.5s, drop a sponsor crate ahead of Rex and send Tanya for it
 ##   --save=PATH     use another save file (e.g. user://none.cfg for a clean title screen)
 
 var capture_dir := ""
@@ -31,6 +34,14 @@ func _ready() -> void:
 			bot = true
 		elif arg == "--god":
 			god = true
+		elif arg == "--touch":
+			GameState.touch_mode = "on"
+			GameState.settings_changed.emit.call_deferred()
+		elif arg.begins_with("--pause="):
+			var page := arg.get_slice("=", 1)
+			get_tree().create_timer(4.5).timeout.connect(func(): _open_pause(page))
+		elif arg == "--tanya":
+			get_tree().create_timer(4.5).timeout.connect(_send_tanya)
 		elif arg.begins_with("--save="):
 			GameState.save_path = arg.get_slice("=", 1)
 		elif arg == "--quit-test":
@@ -86,3 +97,23 @@ func _drive_bot() -> void:
 func _hold(action: String) -> void:
 	Input.action_press(action)
 	_press.append(action)
+
+
+func _open_pause(page: String) -> void:
+	var hud: Hud = GameState.level.hud
+	hud.set_paused(true)
+	match page:
+		"ratings":
+			hud._open_page(Hud.ratings_page())
+		"controls":
+			hud._open_page(hud._text_page("CONTROLS", Hud.CONTROLS_TEXT))
+		"settings":
+			hud._open_page(SettingsMenu.new())
+
+
+func _send_tanya() -> void:
+	var level: Level = GameState.level
+	var crate := SponsorCrate.new()
+	crate.position = level.ceiling_above(level.rex.global_position + Vector2(level.rex.facing * 90, -24), 6) + Vector2(0, 8)
+	level.add_child(crate)
+	level.send_tanya(crate)
