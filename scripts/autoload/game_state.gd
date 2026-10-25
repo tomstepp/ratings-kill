@@ -40,7 +40,7 @@ var sfx_vol := 8
 var voice_vol := 8
 var touch_mode := "auto"
 # Easy mode: every hit costs one pip, longer recovery after a hit, weaker bosses,
-# gentler grunts, slower ratings drain and no cancellations.
+# gentler grunts, slower ratings drain, slower respawns and no cancellations.
 var easy := false
 
 signal settings_changed

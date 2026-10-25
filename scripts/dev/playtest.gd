@@ -659,7 +659,7 @@ func _season_checks() -> void:
 	Ratings.value = 0.0
 	await frames(60 * 3)
 	check("the cancellation alarm shows while the meter is empty", level.hud._alarm[0].visible and level.hud._cancel.visible)
-	await frames(60 * 4)
+	await frames(60 * 8)
 	check("an empty meter cancels the episode on floor 3", canceled[0])
 	await frames(200)
 

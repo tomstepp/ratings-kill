@@ -27,7 +27,7 @@ episode.
   sliders, cranes, belts, live rails, laser gates, crates, TV blocks, secrets behind fake walls
 - **Ratings**: the meter sets a cash multiplier (x1 to x4) on everything earned on air; each level ends with a ratings
   report (average, peak, grade S to D, network bonus); a full meter brings a sponsor drop; a low one brings boredom
-  penalties; and from Floor 3 on, an empty meter for 6 seconds gets the episode canceled
+  penalties; and from Floor 3 on, an empty meter for 10 seconds gets the episode canceled
 - **Difficulty**: grunts take more hits floor by floor (+35% health per floor), rats lunge when Rex gets close,
   firepower upgrades fan out instead of stacking on one target, enemies get faster and shoot more often, the meter drains faster, shop prices rise, and
   Network HQ hits harder
@@ -37,7 +37,7 @@ episode.
 - **How ratings work**: a cheat sheet in the pause menu; a "BORING!" nudge when the meter is low, and a red alarm
   with a countdown before a cancellation
 - **Easy / Normal**: picked at New Game, changeable in Settings. Easy: every hit costs one pip, longer recovery after
-  a hit, bosses with 35% less health, gentler grunts, slower ratings drain and no cancellations
+  a hit, bosses with 35% less health, gentler grunts, slower ratings drain, enemies that take twice as long to come back, and no cancellations
 - **Settings** (title screen and pause menu): music, sound and voice volume, narration, fullscreen, touch buttons,
   difficulty
 - **Touch controls**: on-screen d-pad, jump, shoot, flash and pause on phones and tablets (Settings can force them on

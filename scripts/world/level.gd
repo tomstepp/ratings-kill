@@ -22,7 +22,7 @@ const BELT_RIGHT := Vector2i(13, 0)
 const SOLID_TILES := [BRICK, FLOOR_TOP, FILL, BRIDGE, BELT_LEFT, BELT_RIGHT]
 const BELT_SPEED := 55.0
 const ATLAS_TILES := 14
-const RESPAWN_AFTER := 35.0  # seconds before a killed grunt returns
+const RESPAWN_AFTER := 35.0  # seconds before a killed grunt returns (doubled on Easy)
 
 static var _tilesets := {}
 
@@ -368,7 +368,7 @@ func _spawn_entities() -> void:
 func _queue_respawn(script: Script, fast: bool, pos: Vector2) -> void:
 	if is_queued_for_deletion() or not is_inside_tree() or _complete:
 		return
-	get_tree().create_timer(RESPAWN_AFTER).timeout.connect(_try_respawn.bind(script, fast, pos))
+	get_tree().create_timer(RESPAWN_AFTER * (2.0 if GameState.easy else 1.0)).timeout.connect(_try_respawn.bind(script, fast, pos))
 
 
 func _try_respawn(script: Script, fast: bool, pos: Vector2) -> void:

@@ -312,7 +312,7 @@ static func ratings_page() -> Control:
 			page.add_child(pts)
 	_centered_lines(page, PackedStringArray(["GETTING HIT -8. STANDING AROUND DRAINS IT.",
 		"HIGHER RATINGS PAY MORE: CASH X2 AT 25, X3 AT 50,", "X4 AT 75. A FULL METER BRINGS A SPONSOR DROP.",
-		"FLOOR 3+: EMPTY FOR 6 SECONDS = CANCELED!"]), 114, Art.c("white"))
+		"FLOOR 3+: EMPTY FOR 10 SECONDS = CANCELED!"]), 114, Art.c("white"))
 	_centered_lines(page, PackedStringArray(["ESC: BACK"]), 158, Art.c("metal"))
 	return page
 

@@ -165,10 +165,9 @@ func _process_dialogue(delta: float) -> void:
 		_text.text = _current.text
 		_text.visible_characters = 0
 		_shown = 0.0
-		_hold = 1.2 + _current.text.length() * 0.025
+		# Long enough to read even if the voice is off or finishes early.
+		_hold = 2.0 + _current.text.length() * 0.045
 		_current.narrated = Narrator.speak(_current.text, _current.speaker)
-		if _current.narrated:
-			_hold = 0.4
 		_speech_wait = 0.0
 		_panel.visible = true
 	var total: int = _current.text.length()

@@ -14,7 +14,7 @@ signal tier_changed(mult: int)
 const MAX := 100.0
 const START := 35.0
 const AFTER_DROP := 60.0  # stays at x3 after a drop
-const DECAY := 1.6  # per second
+const DECAY := 1.0  # per second
 const BORED_BELOW := 15.0
 const BORED_AFTER := 9.0  # seconds spent low before the penalty
 const BORED_COOLDOWN := 18.0
@@ -22,7 +22,7 @@ const CLEAN_EVERY := 25.0  # seconds without damage for a CLEAN RUN bonus
 const QUIP_WINDOW := 2.5  # take an enemy down this soon after a quip for a bonus
 const TIER := 25.0  # every 25 points of meter adds x1 to the cash multiplier
 const CANCEL_FROM_FLOOR := 2  # floor index (0-based) where an empty meter cancels you
-const CANCEL_AFTER := 6.0  # seconds at zero before the plug is pulled
+const CANCEL_AFTER := 10.0  # seconds at zero before the plug is pulled
 const CANCEL_BELOW := 1.0
 # Average meter over the level -> grade; the bonus scales with the floor.
 const GRADES := [[80.0, "S", 1500], [62.0, "A", 1000], [46.0, "B", 600], [30.0, "C", 300], [0.0, "D", 0]]
@@ -68,8 +68,8 @@ func _process(delta: float) -> void:
 	_level_t += delta
 	_sum += value * delta
 	# Later floors' audiences are harder to please.
-	var decay: float = DECAY * (1.0 + 0.2 * GameState.difficulty()) * (1.0 - 0.3 * GameState.upgrades.hype) \
-		* (0.7 if GameState.easy else 1.0)
+	var decay: float = DECAY * (1.0 + 0.15 * GameState.difficulty()) * (1.0 - 0.3 * GameState.upgrades.hype) \
+		* (0.6 if GameState.easy else 1.0)
 	_set_value(value - decay * delta)
 	# Only while there's something on screen worth watching: with every enemy down,
 	# the boredom penalty sends in rats instead of the network pulling the plug.
