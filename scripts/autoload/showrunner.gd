@@ -165,7 +165,8 @@ func _process_dialogue(delta: float) -> void:
 		_text.text = _current.text
 		_text.visible_characters = 0
 		_shown = 0.0
-		# Long enough to read even if the voice is off or finishes early.
+		# The last page lingers long enough to read even if the voice is off or
+		# finishes early; pages with more to follow move on briskly.
 		_hold = 2.0 + _current.text.length() * 0.045
 		_current.narrated = Narrator.speak(_current.text, _current.speaker)
 		_speech_wait = 0.0
@@ -187,7 +188,9 @@ func _process_dialogue(delta: float) -> void:
 		_speech_wait += delta
 		# Narrated lines stay up until the voice finishes (with a safety cap).
 		var still_talking: bool = _current.narrated and Narrator.is_speaking() and _speech_wait < 15.0
-		if _hold <= 0.0 and not still_talking:
+		var more_to_say := not _queue.is_empty()
+		var brisk: float = 0.3 if _current.narrated else 0.8 + _current.text.length() * 0.025
+		if (_hold <= 0.0 or (more_to_say and _speech_wait >= brisk)) and not still_talking:
 			_current = {}
 
 

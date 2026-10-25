@@ -48,20 +48,25 @@ func _build() -> void:
 
 func _behave(delta: float) -> void:
 	velocity.y = minf(velocity.y + GRAVITY * delta, 300.0)
+	var lunging := false
 	if stunned > 0.0:
 		velocity.x = 0.0
 	else:
-		var lunge := 1.0
 		var rex: Rex = GameState.level.rex if GameState.level else null
 		if rex and rex.state != Rex.State.DEAD:
 			var d := rex.global_position - global_position
 			if absf(d.x) < LUNGE_RANGE and absf(d.y) < 20.0 and is_on_floor():
 				dir = int(signf(d.x)) if d.x != 0.0 else dir
-				lunge = LUNGE_BOOST
-		velocity.x = dir * speed * lunge
+				lunging = true
+		velocity.x = dir * speed * (LUNGE_BOOST if lunging else 1.0)
 	_ledge.position = Vector2(dir * 8, -2)
+	_ledge.force_raycast_update()
+	# A lunging rat stops at the edge, still facing Rex, instead of turning
+	# its back on him every other frame.
+	if lunging and is_on_floor() and not _ledge.is_colliding():
+		velocity.x = 0.0
 	move_and_slide()
-	if stunned <= 0.0 and is_on_floor():
+	if stunned <= 0.0 and not lunging and is_on_floor():
 		if is_on_wall() or not _ledge.is_colliding():
 			dir = -dir
 	sprite.flip_h = dir > 0
