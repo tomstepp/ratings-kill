@@ -1,6 +1,7 @@
 #!/bin/sh
 # Export the web build and add the website's extras: the start-screen and
-# link-preview images and licenses.txt. Also zips it for itch.io.
+# link-preview images and licenses.txt. Zips it for itch.io and copies it into
+# docs/, which GitHub Pages publishes at rex.tomstepp.com.
 # Usage: sh tools/build_web.sh
 set -e
 cd "$(dirname "$0")/.."
@@ -13,4 +14,6 @@ mkdir -p build/web
 cp web/title.png web/og.png build/web/
 rm -f build/super-rex-live-web.zip
 (cd build/web && zip -qr ../super-rex-live-web.zip .)
+# docs/ holds only the site; keep its Pages files (CNAME, .nojekyll) and .gdignore.
+rsync -a --delete --exclude CNAME --exclude .nojekyll --exclude .gdignore build/web/ docs/
 echo "web build ready in build/web ($(du -sh build/web | cut -f1)), itch.io zip at build/super-rex-live-web.zip"

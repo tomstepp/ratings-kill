@@ -5,7 +5,7 @@ the Tower Below while the Galactic Content Syndicate broadcasts it live. Stylish
 meter buys sponsor drops and multiplies every dollar you earn, and a bored audience makes the Showrunner "spice
 things up".
 
-Design doc: [docs/GAME_DESIGN.txt](docs/GAME_DESIGN.txt). The game was called *Ratings Kill* until launch prep; the doc and this repo's folder still use
+Design doc: [design/GAME_DESIGN.txt](design/GAME_DESIGN.txt). The game was called *Ratings Kill* until launch prep; the doc and this repo's folder still use
 that name.
 
 ## Status
@@ -83,8 +83,12 @@ sh tools/build_web.sh   # web build + website extras + itch.io zip
 node tools/serve_web.mjs 8060   # then open http://localhost:8060
 ```
 
+`build_web.sh` also copies the finished site into `docs/`, which GitHub Pages publishes at
+[rex.tomstepp.com](https://rex.tomstepp.com) (Settings → Pages → branch `main`, folder `/docs`). Commit and push
+`docs/` to update the live site.
+
 The web page is `web/shell.html`: a start screen with a Play button (nothing downloads until it's pressed), a notice for
-phones and tablets, link-preview tags for superrexlive.com, and a link to `licenses.txt` (the Godot license and its
+phones and tablets, link-preview tags for rex.tomstepp.com, and a link to `licenses.txt` (the Godot license and its
 third-party notices, also shown in the in-game Credits). `web/title.png` and `web/og.png` come from
 `tools/make_web_images.py`.
 
